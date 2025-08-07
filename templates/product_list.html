@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Products - Shop Bot Admin</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: #333; }
+        .nav { margin-bottom: 20px; }
+        .nav a { margin-right: 20px; color: #007bff; text-decoration: none; }
+        .nav a:hover { text-decoration: underline; }
+        .actions { margin-bottom: 20px; }
+        .btn { padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn:hover { background: #0056b3; }
+        .btn.danger { background: #dc3545; }
+        .btn.danger:hover { background: #c82333; }
+        table { width: 100%; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f8f8f8; font-weight: bold; }
+        .active { color: #28a745; }
+        .inactive { color: #dc3545; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 50px auto; padding: 20px; width: 90%; max-width: 500px; border-radius: 8px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; }
+        .form-group input, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Products Management</h1>
+        
+        <div class="nav">
+            <a href="/admin/">Dashboard</a>
+            <a href="/admin/products">Products</a>
+            <a href="/admin/orders">Orders</a>
+        </div>
+        
+        <div class="actions">
+            <button class="btn" onclick="showAddProduct()">Add Product</button>
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .products}}
+                <tr>
+                    <td>#{{.ID}}</td>
+                    <td>{{.Name}}</td>
+                    <td>${{printf "%.2f" (divf .PriceCents 100)}}</td>
+                    <td>{{.Stock}}</td>
+                    <td class="{{if .IsActive}}active{{else}}inactive{{end}}">
+                        {{if .IsActive}}Active{{else}}Inactive{{end}}
+                    </td>
+                    <td>
+                        <a href="/admin/products/{{.ID}}/codes" class="btn" style="font-size: 12px; padding: 4px 8px;">Manage Codes</a>
+                        <button class="btn" style="font-size: 12px; padding: 4px 8px;" onclick="editProduct({{.ID}}, '{{.Name}}', {{.PriceCents}}, {{.IsActive}})">Edit</button>
+                        <button class="btn danger" style="font-size: 12px; padding: 4px 8px;" onclick="deleteProduct({{.ID}})">Deactivate</button>
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Add Product</h2>
+            <form id="productForm">
+                <input type="hidden" id="productId">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="productName" required>
+                </div>
+                <div class="form-group">
+                    <label>Price ($)</label>
+                    <input type="number" id="productPrice" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="productActive" checked> Active
+                    </label>
+                </div>
+                <button type="submit" class="btn">Save</button>
+                <button type="button" class="btn" style="background: #6c757d;" onclick="closeModal()">Cancel</button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        const modal = document.getElementById('productModal');
+        const form = document.getElementById('productForm');
+        
+        function showAddProduct() {
+            document.getElementById('modalTitle').textContent = 'Add Product';
+            document.getElementById('productId').value = '';
+            document.getElementById('productName').value = '';
+            document.getElementById('productPrice').value = '';
+            document.getElementById('productActive').checked = true;
+            modal.style.display = 'block';
+        }
+        
+        function editProduct(id, name, priceCents, isActive) {
+            document.getElementById('modalTitle').textContent = 'Edit Product';
+            document.getElementById('productId').value = id;
+            document.getElementById('productName').value = name;
+            document.getElementById('productPrice').value = priceCents / 100;
+            document.getElementById('productActive').checked = isActive;
+            modal.style.display = 'block';
+        }
+        
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+        
+        function deleteProduct(id) {
+            if (!confirm('Deactivate this product?')) return;
+            
+            fetch(`/admin/products/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': 'Bearer ' + getAdminToken()
+                }
+            }).then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('Failed to deactivate product');
+                }
+            });
+        }
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const id = document.getElementById('productId').value;
+            const data = {
+                name: document.getElementById('productName').value,
+                price: parseFloat(document.getElementById('productPrice').value),
+                is_active: document.getElementById('productActive').checked
+            };
+            
+            const url = id ? `/admin/products/${id}` : '/admin/products';
+            const method = id ? 'PUT' : 'POST';
+            
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + getAdminToken()
+                },
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Failed to save product');
+            }
+        });
+        
+        function getAdminToken() {
+            // In a real app, this should be handled more securely
+            return localStorage.getItem('admin_token') || prompt('Enter admin token:');
+        }
+        
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>

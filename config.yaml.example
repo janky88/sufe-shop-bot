@@ -1,0 +1,84 @@
+# Telegram Bot Configuration
+telegram:
+  # Your bot token from @BotFather
+  token: "YOUR_BOT_TOKEN_HERE"
+  
+  # Webhook URL for production (use your domain)
+  webhook_url: "https://yourdomain.com/webhook"
+  
+  # Mode: "polling" for development, "webhook" for production
+  mode: "polling"
+
+# Database Configuration
+database:
+  # Driver: "postgres" or "mysql"
+  driver: "postgres"
+  
+  # PostgreSQL DSN example
+  dsn: "host=localhost user=shopbot password=password dbname=shopbot port=5432 sslmode=disable"
+  
+  # MySQL DSN example
+  # dsn: "shopbot:password@tcp(localhost:3306)/shopbot?charset=utf8mb4&parseTime=True&loc=Local"
+
+# Redis Cache Configuration (optional but recommended)
+redis:
+  # Redis URL with password
+  url: "redis://:your_redis_password@localhost:6379/0"
+  
+  # Without password
+  # url: "redis://localhost:6379/0"
+
+# HTTP Server Configuration
+server:
+  # Server port
+  port: 8080
+  
+  # Admin panel credentials
+  admin_username: "admin"
+  admin_password: "change_this_secure_password"
+
+# Rainbow Epay Configuration
+epay:
+  # Payment gateway URL
+  api_url: "https://pay.example.com"
+  
+  # Merchant ID
+  pid: "10001"
+  
+  # Secret key for signature
+  key: "your_secret_key_here"
+
+# Logging Configuration
+log:
+  # Log level: debug, info, warn, error
+  level: "info"
+  
+  # Log format: json or text
+  format: "json"
+
+# Language Configuration
+language:
+  # Default language
+  default: "zh"
+  
+  # Supported languages
+  supported: ["zh", "en"]
+
+# Broadcast Configuration
+broadcast:
+  # Number of worker goroutines
+  workers: 10
+  
+  # Rate limit (messages per second)
+  rate_limit: 30
+
+# Retry Configuration
+retry:
+  # Maximum retry attempts
+  max_attempts: 3
+  
+  # Initial retry delay
+  initial_delay: "1m"
+  
+  # Maximum retry delay
+  max_delay: "1h"

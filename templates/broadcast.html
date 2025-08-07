@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Broadcast Messages - Admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .nav {
+            margin-bottom: 20px;
+        }
+        .nav a {
+            margin-right: 20px;
+            color: #007bff;
+            text-decoration: none;
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .stat-card h3 {
+            margin: 0 0 10px 0;
+            color: #666;
+            font-size: 14px;
+        }
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        .broadcast-form {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .form-group textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .preview {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Broadcast Messages</h1>
+        
+        <div class="nav">
+            <a href="/admin/">Dashboard</a>
+            <a href="/admin/broadcast">Send Broadcast</a>
+            <a href="/admin/broadcast/history">Broadcast History</a>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Total Users</h3>
+                <div class="value">{{.stats.TotalUsers}}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Groups</h3>
+                <div class="value">{{.stats.TotalGroups}}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Active Groups</h3>
+                <div class="value">{{.stats.ActiveGroups}}</div>
+            </div>
+        </div>
+        
+        <div class="broadcast-form">
+            <h2>Send New Broadcast</h2>
+            <form id="broadcastForm">
+                <div class="form-group">
+                    <label for="type">Message Type</label>
+                    <select name="type" id="type">
+                        <option value="announcement">📢 Announcement</option>
+                        <option value="stock_update">📦 Stock Update</option>
+                        <option value="promotion">🎉 Promotion</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="target_type">Target Audience</label>
+                    <select name="target_type" id="target_type">
+                        <option value="all">All (Users + Groups)</option>
+                        <option value="users">Users Only</option>
+                        <option value="groups">Groups Only</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="content">Message Content</label>
+                    <textarea name="content" id="content" placeholder="Enter your message here... Supports Markdown formatting." required></textarea>
+                    <div class="preview" id="preview" style="display: none;"></div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Send Broadcast</button>
+                    <button type="button" class="btn btn-secondary" onclick="previewMessage()">Preview</button>
+                    <a href="/admin/broadcast/history" class="btn btn-secondary">View History</a>
+                </div>
+            </form>
+        </div>
+        
+        <div id="alertContainer"></div>
+    </div>
+    
+    <script>
+        const authToken = localStorage.getItem('adminToken') || '';
+        
+        document.getElementById('broadcastForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = {
+                type: formData.get('type'),
+                target_type: formData.get('target_type'),
+                content: formData.get('content')
+            };
+            
+            if (!confirm(`Are you sure you want to send this broadcast to ${data.target_type}?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/admin/broadcast/send', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + authToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showAlert('success', result.message);
+                    e.target.reset();
+                    document.getElementById('preview').style.display = 'none';
+                } else {
+                    showAlert('error', 'Error: ' + result.error);
+                }
+            } catch (error) {
+                showAlert('error', 'Error: ' + error.message);
+            }
+        });
+        
+        function previewMessage() {
+            const type = document.getElementById('type').value;
+            const content = document.getElementById('content').value;
+            
+            if (!content) {
+                alert('Please enter message content');
+                return;
+            }
+            
+            const preview = document.getElementById('preview');
+            let header = '';
+            
+            switch (type) {
+                case 'stock_update':
+                    header = '📦 *Stock Update*\n\n';
+                    break;
+                case 'promotion':
+                    header = '🎉 *Special Promotion*\n\n';
+                    break;
+                case 'announcement':
+                    header = '📢 *Announcement*\n\n';
+                    break;
+            }
+            
+            preview.textContent = header + content;
+            preview.style.display = 'block';
+        }
+        
+        function showAlert(type, message) {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            
+            container.innerHTML = '';
+            container.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

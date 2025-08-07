@@ -1,0 +1,54 @@
+# Git files
+.git
+.gitignore
+
+# Go build cache
+vendor/
+*.test
+*.out
+
+# Binary files
+shopbot
+/cmd/server/server
+
+# Config files (should be mounted)
+config.yaml
+.env
+
+# Development files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Documentation
+*.md
+docs/
+
+# Test files
+*_test.go
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.bak
+*.backup
+backups/

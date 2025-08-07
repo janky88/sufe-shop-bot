@@ -1,0 +1,76 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.html
+
+# Go build cache
+/build/
+/bin/
+/vendor/
+
+# Dependency directories
+go.sum
+
+# IDE directories
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment files
+.env
+.env.local
+.env.*.local
+config.yaml
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Log files
+*.log
+/logs/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Binary output
+shopbot
+shopbot-*
+
+# Docker volumes
+postgres_data/
+redis_data/
+
+# Backup files
+backups/
+*.sql
+*.sql.gz
+
+# Test artifacts
+test_callback

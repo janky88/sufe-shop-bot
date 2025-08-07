@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Message Templates - Admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .template-group {
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+        }
+        .template-group h3 {
+            margin-top: 0;
+            color: #2196F3;
+        }
+        .template-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        .template-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .template-lang {
+            font-weight: bold;
+            padding: 4px 8px;
+            background-color: #e3f2fd;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        .template-status {
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        .status-active {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        .status-inactive {
+            background-color: #ffebee;
+            color: #d32f2f;
+        }
+        .template-variables {
+            margin: 10px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        .variable {
+            display: inline-block;
+            padding: 2px 6px;
+            margin: 2px;
+            background-color: #ffe0b2;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+            resize: vertical;
+        }
+        .template-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .save-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .save-btn:hover {
+            background-color: #45a049;
+        }
+        .cancel-btn {
+            background-color: #f44336;
+            color: white;
+        }
+        .cancel-btn:hover {
+            background-color: #d32f2f;
+        }
+        .edit-btn {
+            background-color: #2196F3;
+            color: white;
+        }
+        .edit-btn:hover {
+            background-color: #1976D2;
+        }
+        .toggle-btn {
+            background-color: #ff9800;
+            color: white;
+        }
+        .toggle-btn:hover {
+            background-color: #f57c00;
+        }
+        .preview {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-left: 3px solid #2196F3;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .info-box {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .info-box h4 {
+            margin-top: 0;
+        }
+        .info-box code {
+            background-color: #bbdefb;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Message Templates Management</h1>
+        
+        <div class="info-box">
+            <h4>Template Variables Guide</h4>
+            <p>Use Go template syntax to include variables: <code>{{.VariableName}}</code></p>
+            <p>Example: <code>Order ID: {{.OrderID}}</code></p>
+        </div>
+        
+        {{range $code, $templates := .templateMap}}
+        <div class="template-group">
+            <h3>{{$code}}</h3>
+            <div class="template-variables">
+                Available variables:
+                {{range index $.variables $code}}
+                <span class="variable">{{.}}</span>
+                {{end}}
+            </div>
+            
+            {{range $templates}}
+            <div class="template-item" id="template-{{.ID}}">
+                <div class="template-header">
+                    <span class="template-lang">{{.Language}}</span>
+                    <span class="template-status {{if .IsActive}}status-active{{else}}status-inactive{{end}}">
+                        {{if .IsActive}}Active{{else}}Inactive{{end}}
+                    </span>
+                </div>
+                
+                <div class="edit-form" style="display: none;">
+                    <textarea id="content-{{.ID}}" data-original="{{.Content}}">{{.Content}}</textarea>
+                    <div class="template-actions">
+                        <button class="save-btn" onclick="saveTemplate({{.ID}})">Save</button>
+                        <button class="cancel-btn" onclick="cancelEdit({{.ID}})">Cancel</button>
+                        <button class="toggle-btn" onclick="toggleStatus({{.ID}}, {{.IsActive}})">
+                            {{if .IsActive}}Deactivate{{else}}Activate{{end}}
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="view-mode">
+                    <div class="preview">{{.Content}}</div>
+                    <div class="template-actions">
+                        <button class="edit-btn" onclick="editTemplate({{.ID}})">Edit</button>
+                    </div>
+                </div>
+            </div>
+            {{end}}
+        </div>
+        {{end}}
+    </div>
+    
+    <script>
+        const authToken = localStorage.getItem('adminToken') || '';
+        
+        function editTemplate(id) {
+            document.querySelector(`#template-${id} .view-mode`).style.display = 'none';
+            document.querySelector(`#template-${id} .edit-form`).style.display = 'block';
+        }
+        
+        function cancelEdit(id) {
+            const textarea = document.getElementById(`content-${id}`);
+            textarea.value = textarea.dataset.original;
+            document.querySelector(`#template-${id} .view-mode`).style.display = 'block';
+            document.querySelector(`#template-${id} .edit-form`).style.display = 'none';
+        }
+        
+        async function saveTemplate(id) {
+            const content = document.getElementById(`content-${id}`).value;
+            const isActive = document.querySelector(`#template-${id} .template-status`).classList.contains('status-active');
+            
+            try {
+                const response = await fetch(`/admin/templates/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + authToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        content: content,
+                        is_active: isActive
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert(result.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        async function toggleStatus(id, currentStatus) {
+            const content = document.getElementById(`content-${id}`).value;
+            const newStatus = !currentStatus;
+            
+            try {
+                const response = await fetch(`/admin/templates/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + authToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        content: content,
+                        is_active: newStatus
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert(result.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

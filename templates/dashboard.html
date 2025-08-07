@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard - Shop Bot</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: #333; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .stat-card h3 { margin: 0 0 10px 0; color: #666; font-size: 14px; }
+        .stat-card .value { font-size: 32px; font-weight: bold; color: #333; }
+        .stat-card .sub { font-size: 12px; color: #999; }
+        table { width: 100%; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f8f8f8; font-weight: bold; }
+        .status { padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+        .status.pending { background: #fff3cd; color: #856404; }
+        .status.paid { background: #cce5ff; color: #004085; }
+        .status.delivered { background: #d4edda; color: #155724; }
+        .status.paid_no_stock { background: #f8d7da; color: #721c24; }
+        .nav { margin-bottom: 20px; }
+        .nav a { margin-right: 20px; color: #007bff; text-decoration: none; }
+        .nav a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Shop Bot Admin Dashboard</h1>
+        
+        <div class="nav">
+            <a href="/admin/">Dashboard</a>
+            <a href="/admin/products">Products</a>
+            <a href="/admin/orders">Orders</a>
+            <a href="/admin/recharge-cards">Recharge Cards</a>
+            <a href="/admin/templates">Message Templates</a>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Total Products</h3>
+                <div class="value">{{.stats.TotalProducts}}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Orders</h3>
+                <div class="value">{{.stats.TotalOrders}}</div>
+                <div class="sub">{{.stats.PendingOrders}} pending</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Users</h3>
+                <div class="value">{{.stats.TotalUsers}}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Today's Orders</h3>
+                <div class="value">{{.stats.TodayOrders}}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Today's Revenue</h3>
+                <div class="value">${{printf "%.2f" (divf .stats.TodayRevenue 100)}}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Available Codes</h3>
+                <div class="value">{{.stats.AvailableCodes}}</div>
+                <div class="sub">of {{.stats.TotalCodes}} total</div>
+            </div>
+        </div>
+        
+        <h2>Recent Orders</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>User</th>
+                    <th>Product</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .recent_orders}}
+                <tr>
+                    <td>#{{.ID}}</td>
+                    <td>{{.User.Username}}</td>
+                    <td>{{.Product.Name}}</td>
+                    <td>${{printf "%.2f" (divf .AmountCents 100)}}</td>
+                    <td><span class="status {{.Status}}">{{.Status}}</span></td>
+                    <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
