@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="stylesheet" href="/static/theme.css">
+    <title>系统设置 - 商城机器人管理中心</title>
+    <style>
+        /* Modern UI Base Styles with Aurora Gradient */
+        * { 
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --aurora-gradient: linear-gradient(
+                45deg,
+                rgba(102, 126, 234, 0.1) 0%,
+                rgba(118, 75, 162, 0.1) 25%,
+                rgba(255, 154, 139, 0.1) 50%,
+                rgba(255, 206, 84, 0.1) 75%,
+                rgba(102, 126, 234, 0.1) 100%
+            );
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Aurora Background Animation */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(255, 154, 139, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(255, 206, 84, 0.2) 0%, transparent 50%);
+            animation: aurora 20s ease-in-out infinite;
+            z-index: -1;
+        }
+        
+        @keyframes aurora {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(5deg) scale(1.1); }
+            50% { transform: rotate(-5deg) scale(1); }
+            75% { transform: rotate(3deg) scale(1.05); }
+        }
+        
+        /* Glassmorphism Header */
+        .header {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 8px 32px var(--shadow-color);
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--aurora-gradient);
+            opacity: 0.5;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+        
+        @keyframes shimmer {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 70px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+        
+        .logout-btn {
+            padding: 10px 24px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+        }
+        
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        /* Glass Navigation */
+        .nav { 
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 8px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px var(--shadow-color);
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        
+        .nav::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .nav a { 
+            flex: 0 0 auto;
+            padding: 12px 24px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            text-align: center;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .nav a:hover { 
+            background: var(--glass-bg);
+            color: var(--text-primary);
+        }
+        
+        .nav a.active {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        /* Page Title */
+        .page-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        /* Settings Card */
+        .settings-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 0 8px 32px var(--shadow-color);
+            margin-bottom: 24px;
+        }
+        
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 24px;
+        }
+        
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .form-control {
+            width: 100%;
+            max-width: 400px;
+            padding: 12px 16px;
+            background: var(--hover-bg);
+            border: 1px solid var(--glass-bg);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        select.form-control {
+            cursor: pointer;
+        }
+        
+        select.form-control option {
+            background: var(--bg-primary);
+        }
+        
+        .currency-preview {
+            display: inline-block;
+            margin-left: 16px;
+            padding: 8px 16px;
+            background: var(--glass-bg);
+            border-radius: 12px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .currency-preview strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            padding: 12px 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 8px;
+            cursor: pointer;
+        }
+        
+        .alert {
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .alert.success {
+            background: rgba(132, 250, 176, 0.2);
+            border: 1px solid rgba(132, 250, 176, 0.3);
+            color: #84fab0;
+        }
+        
+        .alert.error {
+            background: rgba(245, 87, 108, 0.2);
+            border: 1px solid rgba(245, 87, 108, 0.3);
+            color: #f5576c;
+        }
+        
+        .help-text {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            margin-top: 8px;
+        }
+        
+        /* Order Stats */
+        .stats-container {
+            margin-top: 24px;
+            padding: 24px;
+            background: var(--hover-bg);
+            border-radius: 16px;
+            border: 1px solid var(--glass-bg);
+        }
+        
+        .stats-container h3 {
+            font-size: 18px;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 16px;
+        }
+        
+        .stat-item {
+            background: var(--hover-bg);
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .stat-label {
+            color: var(--text-tertiary);
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .stat-value.pending {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .stat-value.expired {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .stat-value.paid {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .stat-value.total {
+            color: var(--text-primary);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 24px;
+            }
+            
+            .form-control {
+                max-width: 100%;
+            }
+        }
+    </style>
+    <script>
+    function logout() {
+        fetch('/api/logout', { method: 'POST' })
+            .then(() => window.location.href = '/')
+            .catch(err => console.error('Logout failed:', err));
+    }
+    </script>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">商城机器人管理中心</div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="theme-toggle" onclick="toggleTheme()" title="切换主题 (Ctrl+Shift+T)">
+                    <span class="theme-toggle-icon sun">☀️</span>
+                    <span class="theme-toggle-icon moon">🌙</span>
+                </button>
+                <button class="logout-btn" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="nav">
+            <a href="/admin/">仪表盘</a>
+            <a href="/admin/products">商品管理</a>
+            <a href="/admin/orders">订单管理</a>
+            <a href="/admin/users">用户管理</a>
+            <a href="/admin/recharge-cards">充值卡管理</a>
+            <a href="/admin/broadcast">消息推送</a>
+            <a href="/admin/faq">FAQ管理</a>
+            <a href="/admin/templates">消息模板</a>
+            <a href="/admin/settings" class="active">系统设置</a>
+        </div>
+        
+        <h1 class="page-title">系统设置</h1>
+        
+        <div class="settings-card">
+            <h2 class="section-title">货币设置</h2>
+            
+            <div id="alert" class="alert"></div>
+            
+            <form id="settingsForm">
+                <div class="form-group">
+                    <label class="form-label">货币单位</label>
+                    <div style="display: flex; align-items: center;">
+                        <select id="currencySelect" name="currency" class="form-control">
+                            {{range .currencies}}
+                            <option value="{{.Code}}" data-symbol="{{.Symbol}}" {{if eq $.currency .Code}}selected{{end}}>
+                                {{.Code}} - {{.Name}}
+                            </option>
+                            {{end}}
+                        </select>
+                        <div class="currency-preview">
+                            当前符号: <strong id="symbolPreview">{{.symbol}}</strong>
+                        </div>
+                    </div>
+                    <p class="help-text">选择系统使用的货币单位，所有价格显示将使用对应的货币符号</p>
+                </div>
+                
+                <input type="hidden" id="symbolInput" name="symbol" value="{{.symbol}}">
+                
+                <button type="submit" class="btn-primary">保存设置</button>
+            </form>
+        </div>
+        
+        <div class="settings-card">
+            <h2 class="section-title">订单管理设置</h2>
+            
+            <form id="orderSettingsForm">
+                <div class="form-group">
+                    <label class="form-label">订单过期时间（小时）</label>
+                    <input type="number" id="orderExpireHours" name="order_expire_hours" class="form-control" 
+                           min="1" max="168" value="{{.orderSettings.order_expire_hours}}" required>
+                    <p class="help-text">待支付订单超过此时间后将自动过期（默认24小时）</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">清理过期订单时间（天）</label>
+                    <input type="number" id="orderCleanupDays" name="order_cleanup_days" class="form-control" 
+                           min="1" max="365" value="{{.orderSettings.order_cleanup_days}}" required>
+                    <p class="help-text">过期订单超过此天数后将被自动删除（默认7天）</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" id="enableAutoExpire" name="enable_auto_expire" 
+                               {{if eq .orderSettings.enable_auto_expire "true"}}checked{{end}}>
+                        启用订单自动过期
+                    </label>
+                    <p class="help-text">开启后，系统将自动将超时未支付的订单标记为过期</p>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" id="enableAutoCleanup" name="enable_auto_cleanup" 
+                               {{if eq .orderSettings.enable_auto_cleanup "true"}}checked{{end}}>
+                        启用过期订单自动清理
+                    </label>
+                    <p class="help-text">开启后，系统将自动删除长时间过期的订单</p>
+                </div>
+                
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <button type="submit" class="btn-primary">保存订单设置</button>
+                    <button type="button" class="btn-primary" style="background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); box-shadow: 0 4px 15px rgba(132, 250, 176, 0.3);" onclick="runExpireNow()">立即执行过期检查</button>
+                    <button type="button" class="btn-primary" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);" onclick="runCleanupNow()">立即清理过期订单</button>
+                </div>
+            </form>
+            
+            <div class="stats-container">
+                <h3>订单统计</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">待支付订单</div>
+                        <div class="stat-value pending">{{.orderStats.pending}}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">已过期订单</div>
+                        <div class="stat-value expired">{{.orderStats.expired}}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">已支付订单</div>
+                        <div class="stat-value paid">{{.orderStats.paid}}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">总订单数</div>
+                        <div class="stat-value total">{{.orderStats.total}}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 更新货币符号预览
+        document.getElementById('currencySelect').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const symbol = selectedOption.getAttribute('data-symbol');
+            document.getElementById('symbolPreview').textContent = symbol;
+            document.getElementById('symbolInput').value = symbol;
+        });
+        
+        // 提交表单
+        document.getElementById('settingsForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = {
+                currency: formData.get('currency'),
+                symbol: formData.get('symbol')
+            };
+            
+            try {
+                const response = await fetch('/admin/settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                const alert = document.getElementById('alert');
+                
+                if (response.ok) {
+                    alert.className = 'alert success';
+                    alert.textContent = result.message || '设置已保存';
+                    alert.style.display = 'block';
+                    
+                    // 3秒后刷新页面以应用新设置
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    alert.className = 'alert error';
+                    alert.textContent = result.error || '保存失败';
+                    alert.style.display = 'block';
+                }
+            } catch (error) {
+                const alert = document.getElementById('alert');
+                alert.className = 'alert error';
+                alert.textContent = '网络错误: ' + error.message;
+                alert.style.display = 'block';
+            }
+        });
+        
+        // 提交订单设置表单
+        document.getElementById('orderSettingsForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = {
+                order_expire_hours: formData.get('order_expire_hours'),
+                order_cleanup_days: formData.get('order_cleanup_days'),
+                enable_auto_expire: document.getElementById('enableAutoExpire').checked ? 'true' : 'false',
+                enable_auto_cleanup: document.getElementById('enableAutoCleanup').checked ? 'true' : 'false'
+            };
+            
+            try {
+                const response = await fetch('/admin/api/settings', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('adminToken'),
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const alert = document.getElementById('alert');
+                
+                if (response.ok) {
+                    alert.className = 'alert success';
+                    alert.textContent = '订单设置已保存';
+                    alert.style.display = 'block';
+                    setTimeout(() => alert.style.display = 'none', 3000);
+                } else {
+                    const result = await response.json();
+                    alert.className = 'alert error';
+                    alert.textContent = result.error || '保存失败';
+                    alert.style.display = 'block';
+                }
+            } catch (error) {
+                const alert = document.getElementById('alert');
+                alert.className = 'alert error';
+                alert.textContent = '网络错误: ' + error.message;
+                alert.style.display = 'block';
+            }
+        });
+        
+        // 立即执行过期检查
+        async function runExpireNow() {
+            if (!confirm('确定要立即执行订单过期检查吗？')) return;
+            
+            try {
+                const response = await fetch('/admin/api/orders/expire', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('adminToken')
+                    }
+                });
+                
+                const alert = document.getElementById('alert');
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    alert.className = 'alert success';
+                    alert.textContent = `已将 ${result.count} 个订单标记为过期`;
+                    alert.style.display = 'block';
+                    setTimeout(() => window.location.reload(), 2000);
+                } else {
+                    alert.className = 'alert error';
+                    alert.textContent = '执行失败';
+                    alert.style.display = 'block';
+                }
+            } catch (error) {
+                const alert = document.getElementById('alert');
+                alert.className = 'alert error';
+                alert.textContent = '网络错误: ' + error.message;
+                alert.style.display = 'block';
+            }
+        }
+        
+        // 立即清理过期订单
+        async function runCleanupNow() {
+            if (!confirm('确定要立即清理过期订单吗？此操作不可恢复！')) return;
+            
+            try {
+                const response = await fetch('/admin/api/orders/cleanup', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('adminToken')
+                    }
+                });
+                
+                const alert = document.getElementById('alert');
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    alert.className = 'alert success';
+                    alert.textContent = `已清理 ${result.count} 个过期订单`;
+                    alert.style.display = 'block';
+                    setTimeout(() => window.location.reload(), 2000);
+                } else {
+                    alert.className = 'alert error';
+                    alert.textContent = '清理失败';
+                    alert.style.display = 'block';
+                }
+            } catch (error) {
+                const alert = document.getElementById('alert');
+                alert.className = 'alert error';
+                alert.textContent = '网络错误: ' + error.message;
+                alert.style.display = 'block';
+            }
+        }
+    </script>
+    <script src="/static/theme.js"></script>
+    <script>
+        function toggleTheme() {
+            if (window.themeManager) {
+                window.themeManager.toggleTheme();
+            }
+        }
+    </script>
+</body>
+</html>

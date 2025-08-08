@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html data-theme="light">
+<head>
+    <title>常见问题管理 - 商城机器人管理中心</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="stylesheet" href="/static/theme.css">
+    <style>
+        /* Modern UI Base Styles with Aurora Gradient */
+        * { 
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --aurora-gradient: linear-gradient(
+                45deg,
+                rgba(102, 126, 234, 0.1) 0%,
+                rgba(118, 75, 162, 0.1) 25%,
+                rgba(255, 154, 139, 0.1) 50%,
+                rgba(255, 206, 84, 0.1) 75%,
+                rgba(102, 126, 234, 0.1) 100%
+            );
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Aurora Background Animation */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(255, 154, 139, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(255, 206, 84, 0.2) 0%, transparent 50%);
+            animation: aurora 20s ease-in-out infinite;
+            z-index: -1;
+        }
+        
+        @keyframes aurora {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(5deg) scale(1.1); }
+            50% { transform: rotate(-5deg) scale(1); }
+            75% { transform: rotate(3deg) scale(1.05); }
+        }
+        
+        /* Glassmorphism Header */
+        .header {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 8px 32px var(--shadow-color);
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--aurora-gradient);
+            opacity: 0.5;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+        
+        @keyframes shimmer {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 70px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+        
+        .logout-btn {
+            padding: 10px 24px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+        }
+        
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+        }
+        
+        .container { 
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        /* Glass Navigation */
+        .nav { 
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 8px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px var(--shadow-color);
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        
+        .nav::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .nav a { 
+            flex: 0 0 auto;
+            padding: 12px 24px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            text-align: center;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .nav a:hover { 
+            background: var(--glass-bg);
+            color: var(--text-primary);
+        }
+        
+        .nav a.active {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        /* Page Header */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+        
+        .page-title {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .action-bar {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .lang-selector {
+            padding: 10px 16px;
+            background: var(--hover-bg);
+            border: 1px solid var(--glass-bg);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .lang-selector:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .lang-selector option {
+            background: var(--bg-primary);
+        }
+        
+        .btn {
+            padding: 10px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            color: #1a1a2e;
+            box-shadow: 0 4px 15px rgba(132, 250, 176, 0.3);
+        }
+        
+        .btn-success:hover {
+            box-shadow: 0 6px 20px rgba(132, 250, 176, 0.4);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+        }
+        
+        .btn-danger:hover {
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+        }
+        /* FAQ List */
+        .faq-list {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 0 8px 32px var(--shadow-color);
+        }
+        
+        .faq-item {
+            background: var(--hover-bg);
+            border: 1px solid var(--glass-bg);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 16px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .faq-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px var(--shadow-color);
+        }
+        
+        .faq-item.inactive {
+            opacity: 0.5;
+            background: rgba(255, 255, 255, 0.02);
+        }
+        
+        .faq-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+        
+        .faq-question {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            flex: 1;
+        }
+        
+        .faq-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .sort-handle {
+            cursor: move;
+            color: var(--text-tertiary);
+            padding: 4px;
+            font-size: 20px;
+        }
+        
+        .faq-answer {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            white-space: pre-wrap;
+            margin-bottom: 16px;
+        }
+        
+        .faq-meta {
+            display: flex;
+            gap: 24px;
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+        
+        .btn-sm {
+            padding: 6px 16px;
+            font-size: 12px;
+            border-radius: 8px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-tertiary);
+        }
+        
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 12px;
+            color: var(--text-secondary);
+        }
+        
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .modal-content {
+            max-width: 600px;
+            margin: 50px auto;
+            background: var(--glass-bg);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--glass-bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: var(--glass-bg);
+            border-radius: 50%;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            line-height: 1;
+        }
+        
+        .close:hover {
+            background: var(--glass-border);
+            color: var(--text-primary);
+        }
+        
+        .modal-body {
+            padding: 24px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--hover-bg);
+            border: 1px solid var(--glass-bg);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .form-group select option {
+            background: #1a1a2e;
+        }
+        
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .form-check {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .form-check input {
+            margin-right: 8px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .form-check label {
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+        
+        .modal-footer {
+            padding: 24px;
+            border-top: 1px solid var(--glass-bg);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        
+        .btn-secondary {
+            background: var(--glass-bg);
+            color: white;
+            border: 1px solid var(--glass-border);
+            box-shadow: none;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+            
+            .action-bar {
+                width: 100%;
+            }
+            
+            .page-title {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">商城机器人管理中心</div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="theme-toggle" onclick="toggleTheme()" title="切换主题 (Ctrl+Shift+T)">
+                    <span class="theme-toggle-icon sun">☀️</span>
+                    <span class="theme-toggle-icon moon">🌙</span>
+                </button>
+                <button class="logout-btn" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="nav">
+            <a href="/admin/">仪表盘</a>
+            <a href="/admin/products">商品管理</a>
+            <a href="/admin/orders">订单管理</a>
+            <a href="/admin/users">用户管理</a>
+            <a href="/admin/recharge-cards">充值卡管理</a>
+            <a href="/admin/broadcast">消息推送</a>
+            <a href="/admin/faq" class="active">FAQ管理</a>
+            <a href="/admin/templates">消息模板</a>
+            <a href="/admin/settings">系统设置</a>
+        </div>
+        
+        <div class="page-header">
+            <h1 class="page-title">常见问题管理</h1>
+            <div class="action-bar">
+                <select class="lang-selector" onchange="changeLanguage(this.value)">
+                    <option value="zh" {{if eq .language "zh"}}selected{{end}}>中文</option>
+                    <option value="en" {{if eq .language "en"}}selected{{end}}>English</option>
+                </select>
+                <button class="btn" onclick="showAddModal()">添加问题</button>
+            </div>
+        </div>
+        
+        <div class="faq-list">
+            {{if .faqs}}
+                {{range .faqs}}
+                <div class="faq-item {{if not .IsActive}}inactive{{end}}" data-id="{{.ID}}">
+                    <div class="faq-header">
+                        <div class="faq-question">{{.Question}}</div>
+                        <div class="faq-actions">
+                            <span class="sort-handle" title="拖动排序">⋮⋮</span>
+                            <button class="btn btn-sm" onclick="editFAQ({{.ID}})">编辑</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteFAQ({{.ID}})">删除</button>
+                        </div>
+                    </div>
+                    <div class="faq-answer">{{.Answer}}</div>
+                    <div class="faq-meta">
+                        <span>排序: {{.SortOrder}}</span>
+                        <span>状态: {{if .IsActive}}启用{{else}}禁用{{end}}</span>
+                        <span>更新时间: {{.UpdatedAt.Format "2006-01-02 15:04"}}</span>
+                    </div>
+                </div>
+                {{end}}
+            {{else}}
+                <div class="empty-state">
+                    <h3>暂无常见问题</h3>
+                    <p>点击上方"添加问题"按钮创建第一个常见问题</p>
+                    <button class="btn btn-success" onclick="initializeFAQs()">初始化示例FAQ</button>
+                </div>
+            {{end}}
+        </div>
+    </div>
+    
+    <!-- Add/Edit Modal -->
+    <div id="faqModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">添加常见问题</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <form id="faqForm" onsubmit="saveFAQ(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="faqId" value="">
+                    
+                    <div class="form-group">
+                        <label>问题</label>
+                        <input type="text" name="question" id="question" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>答案</label>
+                        <textarea name="answer" id="answer" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>语言</label>
+                        <select name="language" id="language" required>
+                            <option value="zh">中文</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>排序顺序</label>
+                        <input type="number" name="sort_order" id="sort_order" value="0" min="0">
+                    </div>
+                    
+                    <div class="form-check">
+                        <input type="checkbox" name="is_active" id="is_active" checked>
+                        <label for="is_active">启用</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+                    <button type="submit" class="btn btn-success">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+    const currentLanguage = '{{.language}}';
+    let faqs = {{.faqs}};
+    
+    function logout() {
+        fetch('/api/logout', { method: 'POST' })
+            .then(() => window.location.href = '/')
+            .catch(err => console.error('Logout failed:', err));
+    }
+    
+    function changeLanguage(lang) {
+        window.location.href = '/admin/faq?lang=' + lang;
+    }
+    
+    function initializeFAQs() {
+        if (!confirm('确定要初始化示例FAQ吗？')) {
+            return;
+        }
+        
+        fetch('/admin/faq/init', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert('初始化失败: ' + (data.error || '未知错误'));
+            }
+        })
+        .catch(error => {
+            alert('初始化失败: ' + error.message);
+        });
+    }
+    
+    function showAddModal() {
+        document.getElementById('modalTitle').textContent = '添加常见问题';
+        document.getElementById('faqForm').reset();
+        document.getElementById('faqId').value = '';
+        document.getElementById('language').value = currentLanguage;
+        document.getElementById('is_active').checked = true;
+        document.getElementById('faqModal').style.display = 'block';
+    }
+    
+    function editFAQ(id) {
+        const faq = faqs.find(f => f.ID === id);
+        if (!faq) return;
+        
+        document.getElementById('modalTitle').textContent = '编辑常见问题';
+        document.getElementById('faqId').value = faq.ID;
+        document.getElementById('question').value = faq.Question;
+        document.getElementById('answer').value = faq.Answer;
+        document.getElementById('language').value = faq.Language;
+        document.getElementById('sort_order').value = faq.SortOrder;
+        document.getElementById('is_active').checked = faq.IsActive;
+        document.getElementById('faqModal').style.display = 'block';
+    }
+    
+    function closeModal() {
+        document.getElementById('faqModal').style.display = 'none';
+    }
+    
+    function saveFAQ(event) {
+        event.preventDefault();
+        
+        const formData = new FormData(event.target);
+        const id = document.getElementById('faqId').value;
+        const isEdit = id !== '';
+        
+        const url = isEdit ? `/admin/faq/${id}` : '/admin/faq';
+        const method = isEdit ? 'PUT' : 'POST';
+        
+        // Handle checkbox
+        if (!formData.has('is_active')) {
+            formData.append('is_active', 'false');
+        }
+        
+        fetch(url, {
+            method: method,
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                closeModal();
+                window.location.reload();
+            } else {
+                alert('保存失败: ' + (data.error || '未知错误'));
+            }
+        })
+        .catch(error => {
+            alert('保存失败: ' + error.message);
+        });
+    }
+    
+    function deleteFAQ(id) {
+        if (!confirm('确定要删除这个常见问题吗？')) {
+            return;
+        }
+        
+        fetch(`/admin/faq/${id}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('删除失败: ' + (data.error || '未知错误'));
+            }
+        })
+        .catch(error => {
+            alert('删除失败: ' + error.message);
+        });
+    }
+    
+    // Sortable functionality (简单实现)
+    let draggedItem = null;
+    
+    document.querySelectorAll('.faq-item').forEach(item => {
+        item.draggable = true;
+        
+        item.addEventListener('dragstart', function(e) {
+            draggedItem = this;
+            this.style.opacity = '0.5';
+        });
+        
+        item.addEventListener('dragend', function(e) {
+            this.style.opacity = '';
+            draggedItem = null;
+        });
+        
+        item.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            if (this !== draggedItem) {
+                const rect = this.getBoundingClientRect();
+                const y = e.clientY - rect.top;
+                if (y < rect.height / 2) {
+                    this.style.borderTop = '2px solid #1890ff';
+                    this.style.borderBottom = '';
+                } else {
+                    this.style.borderTop = '';
+                    this.style.borderBottom = '2px solid #1890ff';
+                }
+            }
+        });
+        
+        item.addEventListener('dragleave', function(e) {
+            this.style.borderTop = '';
+            this.style.borderBottom = '';
+        });
+        
+        item.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.style.borderTop = '';
+            this.style.borderBottom = '';
+            
+            if (this !== draggedItem) {
+                const allItems = [...document.querySelectorAll('.faq-item')];
+                const draggedIndex = allItems.indexOf(draggedItem);
+                const targetIndex = allItems.indexOf(this);
+                
+                if (draggedIndex < targetIndex) {
+                    this.parentNode.insertBefore(draggedItem, this.nextSibling);
+                } else {
+                    this.parentNode.insertBefore(draggedItem, this);
+                }
+                
+                // Update sort orders
+                updateSortOrders();
+            }
+        });
+    });
+    
+    function updateSortOrders() {
+        const items = document.querySelectorAll('.faq-item');
+        const updates = [];
+        
+        items.forEach((item, index) => {
+            const id = item.dataset.id;
+            updates.push(
+                fetch(`/admin/faq/${id}/sort`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ sort_order: index * 10 })
+                })
+            );
+        });
+        
+        Promise.all(updates).then(() => {
+            // Optionally reload to ensure consistency
+            // window.location.reload();
+        });
+    }
+    
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('faqModal');
+        if (event.target === modal) {
+            closeModal();
+        }
+    }
+    </script>
+    <script src="/static/theme.js"></script>
+    <script>
+        function toggleTheme() {
+            if (window.themeManager) {
+                window.themeManager.toggleTheme();
+            }
+        }
+    </script>
+</body>
+</html>

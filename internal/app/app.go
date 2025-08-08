@@ -3,7 +3,9 @@ package app
 import (
 	"context"
 	"fmt"
+	"html/template"
 	"net/http"
+	"strconv"
 	"sync"
 	
 	"github.com/gin-gonic/gin"
@@ -16,8 +18,35 @@ import (
 	"shop-bot/internal/config"
 	"shop-bot/internal/httpadmin"
 	logger "shop-bot/internal/log"
+	"shop-bot/internal/store"
 	"shop-bot/internal/worker"
 )
+
+// toFloat64 converts interface{} to float64
+func toFloat64(v interface{}) (float64, error) {
+	switch val := v.(type) {
+	case float64:
+		return val, nil
+	case float32:
+		return float64(val), nil
+	case int:
+		return float64(val), nil
+	case int32:
+		return float64(val), nil
+	case int64:
+		return float64(val), nil
+	case uint:
+		return float64(val), nil
+	case uint32:
+		return float64(val), nil
+	case uint64:
+		return float64(val), nil
+	case string:
+		return strconv.ParseFloat(val, 64)
+	default:
+		return 0, fmt.Errorf("cannot convert %T to float64", v)
+	}
+}
 
 // Application holds all application components
 type Application struct {
@@ -28,6 +57,7 @@ type Application struct {
 	Broadcast   *broadcast.Service
 	AdminServer *httpadmin.Server
 	RetryWorker *worker.RetryWorker
+	OrderMaintenanceWorker *worker.OrderMaintenanceWorker
 	
 	httpServer  *http.Server
 	wg          sync.WaitGroup
@@ -54,6 +84,9 @@ func New(cfg *config.Config, db *gorm.DB) (*Application, error) {
 	// Initialize retry worker
 	retryWorker := worker.NewRetryWorker(db, botInstance.GetAPI())
 	
+	// Initialize order maintenance worker
+	orderMaintenanceWorker := worker.NewOrderMaintenanceWorker(db)
+	
 	// Create application
 	app := &Application{
 		Config:      cfg,
@@ -62,6 +95,7 @@ func New(cfg *config.Config, db *gorm.DB) (*Application, error) {
 		Bot:         botInstance,
 		Broadcast:   broadcastService,
 		RetryWorker: retryWorker,
+		OrderMaintenanceWorker: orderMaintenanceWorker,
 	}
 	
 	// Initialize HTTP admin server with access to bot
@@ -105,6 +139,14 @@ func (app *Application) Start(ctx context.Context) error {
 		app.RetryWorker.Start(ctx)
 	}()
 	
+	// Start order maintenance worker
+	app.wg.Add(1)
+	go func() {
+		defer app.wg.Done()
+		logger.Info("Starting order maintenance worker")
+		app.OrderMaintenanceWorker.Start(ctx)
+	}()
+	
 	return nil
 }
 
@@ -138,6 +180,57 @@ func (app *Application) startHTTPServer(ctx context.Context) {
 func (app *Application) setupRouter() *gin.Engine {
 	r := gin.Default()
 	
+	// Get currency settings
+	_, currencySymbol := store.GetCurrencySettings(app.DB, app.Config)
+	
+	// Add template functions
+	r.SetFuncMap(template.FuncMap{
+		"divf": func(a, b interface{}) float64 {
+			af, _ := toFloat64(a)
+			bf, _ := toFloat64(b)
+			if bf == 0 {
+				return 0
+			}
+			return af / bf
+		},
+		"addf": func(a, b interface{}) float64 {
+			af, _ := toFloat64(a)
+			bf, _ := toFloat64(b)
+			return af + bf
+		},
+		"subf": func(a, b interface{}) float64 {
+			af, _ := toFloat64(a)
+			bf, _ := toFloat64(b)
+			return af - bf
+		},
+		"int": func(a interface{}) int {
+			f, _ := toFloat64(a)
+			return int(f)
+		},
+		"seq": func(start, end int) []int {
+			var result []int
+			for i := start; i <= end; i++ {
+				result = append(result, i)
+			}
+			return result
+		},
+		"currency": func() string {
+			return currencySymbol
+		},
+		"plus": func(a, b int) int {
+			return a + b
+		},
+		"minus": func(a, b int) int {
+			return a - b
+		},
+		"multiply": func(a, b int) int {
+			return a * b
+		},
+	})
+	
+	// Load HTML templates
+	r.LoadHTMLGlob("templates/*")
+	
 	// Add all admin routes
 	app.AdminServer.SetupRoutes(r)
 	
@@ -163,6 +256,11 @@ func (app *Application) handleWebhook(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
+	
+	// Log webhook update
+	logger.Info("Received webhook update", "update_id", update.UpdateID, 
+		"has_message", update.Message != nil,
+		"has_callback", update.CallbackQuery != nil)
 	
 	// Process update asynchronously
 	go app.Bot.HandleWebhookUpdate(update)

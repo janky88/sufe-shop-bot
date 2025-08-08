@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html data-theme="light">
 <head>
-    <title>订单管理 - 商城机器人管理中心</title>
+    <title>用户管理 - 商城机器人管理中心</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#ffffff">
@@ -236,6 +236,10 @@
             background: rgba(255, 255, 255, 0.08);
         }
         
+        .form-group select option {
+            background: #1a1a2e;
+        }
+        
         .btn {
             padding: 10px 24px;
             border: none;
@@ -289,58 +293,42 @@
             background: rgba(255, 255, 255, 0.02);
         }
         
-        /* Status Badges */
-        .status {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
+        /* User Info */
+        .user-name {
             font-weight: 500;
-            display: inline-block;
-        }
-        
-        .status.pending {
-            background: rgba(255, 206, 84, 0.2);
-            color: #ffce54;
-        }
-        
-        .status.paid {
-            background: rgba(132, 250, 176, 0.2);
-            color: #84fab0;
-        }
-        
-        .status.delivered {
-            background: rgba(143, 211, 244, 0.2);
-            color: #8fd3f4;
-        }
-        
-        .status.paid_no_stock {
-            background: rgba(255, 154, 139, 0.2);
-            color: #ff9a8b;
-        }
-        
-        .status.failed_delivery {
-            background: rgba(245, 87, 108, 0.2);
-            color: #f5576c;
-        }
-        
-        /* Code Text */
-        .code-text {
-            font-family: 'Courier New', monospace;
-            background: var(--hover-bg);
-            padding: 4px 8px;
-            border-radius: 6px;
-            white-space: pre-wrap;
-            word-break: break-all;
-            display: inline-block;
-            max-width: 300px;
-            margin: 0;
-            cursor: pointer;
-            font-size: 12px;
             color: var(--text-primary);
         }
         
-        .code-text:hover {
-            background: var(--glass-bg);
+        .user-id {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+        }
+        
+        .balance {
+            font-weight: 600;
+            color: #84fab0;
+        }
+        
+        .order-count {
+            color: var(--text-secondary);
+        }
+        
+        .btn-detail {
+            padding: 6px 16px;
+            font-size: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            display: inline-block;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-detail:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
         
         /* Pagination */
@@ -374,38 +362,28 @@
             border-color: transparent;
         }
         
-        /* User Info */
-        .user-info {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-        
-        .user-name {
-            font-weight: 500;
-        }
-        
-        .user-id {
-            font-size: 12px;
-            color: var(--text-tertiary);
-        }
-        
-        .order-id {
-            font-weight: 600;
-            color: #667eea;
-        }
-        
-        .amount {
-            font-weight: 600;
-            color: #84fab0;
-        }
-        
-        .trade-no {
-            font-family: monospace;
-            font-size: 12px;
-            color: var(--text-secondary);
+        /* Responsive */
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 24px;
+            }
+            
+            .filters form {
+                flex-direction: column;
+            }
+            
+            .form-group {
+                width: 100%;
+            }
         }
     </style>
+    <script>
+    function logout() {
+        fetch('/api/logout', { method: 'POST' })
+            .then(() => window.location.href = '/')
+            .catch(err => console.error('Logout failed:', err));
+    }
+    </script>
 </head>
 <body>
     <div class="header">
@@ -425,8 +403,8 @@
         <div class="nav">
             <a href="/admin/">仪表盘</a>
             <a href="/admin/products">商品管理</a>
-            <a href="/admin/orders" class="active">订单管理</a>
-            <a href="/admin/users">用户管理</a>
+            <a href="/admin/orders">订单管理</a>
+            <a href="/admin/users" class="active">用户管理</a>
             <a href="/admin/recharge-cards">充值卡管理</a>
             <a href="/admin/broadcast">消息推送</a>
             <a href="/admin/faq">FAQ管理</a>
@@ -434,30 +412,28 @@
             <a href="/admin/settings">系统设置</a>
         </div>
         
-        <div class="page-title">订单管理</div>
+        <h1 class="page-title">用户管理</h1>
         
         <div class="filters">
             <form method="get" action="">
                 <div class="form-group">
-                    <label>订单状态</label>
-                    <select name="status">
-                        <option value="">全部</option>
-                        <option value="pending" {{if eq .status "pending"}}selected{{end}}>待支付</option>
-                        <option value="paid" {{if eq .status "paid"}}selected{{end}}>已支付</option>
-                        <option value="delivered" {{if eq .status "delivered"}}selected{{end}}>已发货</option>
-                        <option value="paid_no_stock" {{if eq .status "paid_no_stock"}}selected{{end}}>缺货</option>
-                        <option value="failed_delivery" {{if eq .status "failed_delivery"}}selected{{end}}>发货失败</option>
+                    <label>用户名</label>
+                    <input type="text" name="username" value="{{.username}}" placeholder="搜索用户名">
+                </div>
+                <div class="form-group">
+                    <label>Telegram ID</label>
+                    <input type="text" name="tg_id" value="{{.tg_id}}" placeholder="搜索Telegram ID">
+                </div>
+                <div class="form-group">
+                    <label>排序</label>
+                    <select name="sort">
+                        <option value="created_desc" {{if eq .sort "created_desc"}}selected{{end}}>注册时间 (最新)</option>
+                        <option value="created_asc" {{if eq .sort "created_asc"}}selected{{end}}>注册时间 (最早)</option>
+                        <option value="balance_desc" {{if eq .sort "balance_desc"}}selected{{end}}>余额 (最高)</option>
+                        <option value="balance_asc" {{if eq .sort "balance_asc"}}selected{{end}}>余额 (最低)</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>开始日期</label>
-                    <input type="date" name="start_date" value="{{.start_date}}">
-                </div>
-                <div class="form-group">
-                    <label>结束日期</label>
-                    <input type="date" name="end_date" value="{{.end_date}}">
-                </div>
-                <button type="submit" class="btn">筛选</button>
+                <button type="submit" class="btn">搜索</button>
             </form>
         </div>
         
@@ -465,61 +441,30 @@
             <table>
                 <thead>
                     <tr>
-                        <th>订单号</th>
-                        <th>用户</th>
-                        <th>商品</th>
-                        <th>金额</th>
-                        <th>状态</th>
-                        <th>卡密</th>
-                        <th>支付单号</th>
-                        <th>创建时间</th>
-                        <th>支付时间</th>
+                        <th>用户信息</th>
+                        <th>Telegram ID</th>
+                        <th>余额</th>
+                        <th>订单数</th>
+                        <th>注册时间</th>
+                        <th>最后活跃</th>
+                        <th>操作</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {{range .orders}}
+                    {{range .users}}
                     <tr>
-                        <td><span class="order-id">#{{.ID}}</span></td>
                         <td>
-                            <div class="user-info">
-                                <span class="user-name">{{.User.Username}}</span>
-                                <span class="user-id">ID: {{.User.TgUserID}}</span>
-                            </div>
+                            <div class="user-name">{{.Username}}</div>
+                            <div class="user-id">ID: {{.ID}}</div>
                         </td>
-                        <td>{{if .Product}}{{.Product.Name}}{{else}}余额充值{{end}}</td>
-                        <td class="amount">{{currency}}{{printf "%.2f" (divf .AmountCents 100)}}</td>
-                        <td>
-                            {{if eq .Status "pending"}}
-                                <span class="status pending">待支付</span>
-                            {{else if eq .Status "paid"}}
-                                <span class="status paid">已支付</span>
-                            {{else if eq .Status "delivered"}}
-                                <span class="status delivered">已发货</span>
-                            {{else if eq .Status "paid_no_stock"}}
-                                <span class="status paid_no_stock">缺货</span>
-                            {{else if eq .Status "failed_delivery"}}
-                                <span class="status failed_delivery">发货失败</span>
-                            {{else}}
-                                <span class="status">{{.Status}}</span>
-                            {{end}}
-                        </td>
-                        <td>
-                            {{if .Code}}
-                                <pre class="code-text" onclick="copyToClipboard('{{.Code.Code}}')" 
-                                     title="点击复制">{{.Code.Code}}</pre>
-                            {{else}}
-                                -
-                            {{end}}
-                        </td>
-                        <td>
-                            {{if .EpayOutTradeNo}}
-                                <span class="trade-no" title="{{.EpayOutTradeNo}}">{{.EpayOutTradeNo}}</span>
-                            {{else}}
-                                -
-                            {{end}}
-                        </td>
+                        <td>{{.TgUserID}}</td>
+                        <td class="balance">{{$.currency}}{{printf "%.2f" (divf .BalanceCents 100)}}</td>
+                        <td class="order-count">{{.OrderCount}}</td>
                         <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
-                        <td>{{if .PaidAt}}{{.PaidAt.Format "2006-01-02 15:04"}}{{else}}-{{end}}</td>
+                        <td>{{.UpdatedAt.Format "2006-01-02 15:04"}}</td>
+                        <td>
+                            <a href="/admin/users/{{.ID}}" class="btn-detail">查看详情</a>
+                        </td>
                     </tr>
                     {{end}}
                 </tbody>
@@ -531,16 +476,16 @@
             {{$totalPages := divf .total .limit | addf 0.999 | int}}
             
             {{if gt $page 1}}
-                <a href="?page={{subf $page 1}}&status={{.status}}&start_date={{.start_date}}&end_date={{.end_date}}">上一页</a>
+                <a href="?page={{subf $page 1}}&username={{.username}}&tg_id={{.tg_id}}&sort={{.sort}}">上一页</a>
             {{end}}
             
             {{if gt $totalPages 1}}
                 {{range $i := seq 1 $totalPages}}
                     {{if and (or (le $i 3) (ge $i (subf $totalPages 2))) (or (and (ge $i (subf $page 2)) (le $i (addf $page 2))) (or (le $page 3) (ge $page (subf $totalPages 2))))}}
                         {{if eq $i $page}}
-                            <a href="?page={{$i}}&status={{$.status}}&start_date={{$.start_date}}&end_date={{$.end_date}}" class="active">{{$i}}</a>
+                            <a href="?page={{$i}}&username={{$.username}}&tg_id={{$.tg_id}}&sort={{$.sort}}" class="active">{{$i}}</a>
                         {{else}}
-                            <a href="?page={{$i}}&status={{$.status}}&start_date={{$.start_date}}&end_date={{$.end_date}}">{{$i}}</a>
+                            <a href="?page={{$i}}&username={{$.username}}&tg_id={{$.tg_id}}&sort={{$.sort}}">{{$i}}</a>
                         {{end}}
                     {{else if or (eq $i 4) (eq $i (subf $totalPages 3))}}
                         {{if and (gt $page 5) (lt $page (subf $totalPages 4))}}
@@ -551,26 +496,10 @@
             {{end}}
             
             {{if lt $page $totalPages}}
-                <a href="?page={{addf $page 1}}&status={{.status}}&start_date={{.start_date}}&end_date={{.end_date}}">下一页</a>
+                <a href="?page={{addf $page 1}}&username={{.username}}&tg_id={{.tg_id}}&sort={{.sort}}">下一页</a>
             {{end}}
         </div>
     </div>
-    
-    <script>
-        function logout() {
-            fetch('/api/logout', { method: 'POST' })
-                .then(() => window.location.href = '/')
-                .catch(err => console.error('Logout failed:', err));
-        }
-        
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                alert('已复制到剪贴板');
-            }).catch(err => {
-                console.error('复制失败:', err);
-            });
-        }
-    </script>
     <script src="/static/theme.js"></script>
     <script>
         function toggleTheme() {

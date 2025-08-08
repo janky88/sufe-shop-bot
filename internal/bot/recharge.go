@@ -18,7 +18,7 @@ func (b *Bot) handleRechargeCard(message *tgbotapi.Message) {
 	cardCode := strings.TrimSpace(message.Text)
 	
 	// Use the recharge card
-	card, err := store.UseRechargeCard(b.db, user.ID, cardCode)
+	card, err := store.UseRechargeCardV2(b.db, user.ID, cardCode)
 	if err != nil {
 		var errorMsg string
 		switch err {
@@ -28,6 +28,10 @@ func (b *Bot) handleRechargeCard(message *tgbotapi.Message) {
 			errorMsg = b.msg.Get(lang, "card_already_used")
 		case store.ErrCardExpired:
 			errorMsg = b.msg.Get(lang, "card_expired")
+		case store.ErrCardMaxUsesReached:
+			errorMsg = "该充值卡已达到最大使用次数"
+		case store.ErrCardMaxUsesPerUserReached:
+			errorMsg = "您已达到该充值卡的最大使用次数"
 		default:
 			errorMsg = b.msg.Get(lang, "card_error")
 		}
@@ -38,8 +42,12 @@ func (b *Bot) handleRechargeCard(message *tgbotapi.Message) {
 	// Get new balance
 	newBalance, _ := store.GetUserBalance(b.db, user.ID)
 	
+	// Get currency symbol
+	_, currencySymbol := store.GetCurrencySettings(b.db, b.config)
+	
 	// Send success message
 	successMsg := b.msg.Format(lang, "balance_recharged", map[string]interface{}{
+		"Currency":   currencySymbol,
 		"Amount":     fmt.Sprintf("%.2f", float64(card.AmountCents)/100),
 		"NewBalance": fmt.Sprintf("%.2f", float64(newBalance)/100),
 		"CardCode":   cardCode,

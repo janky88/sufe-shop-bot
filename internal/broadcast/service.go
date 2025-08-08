@@ -141,7 +141,6 @@ func (s *Service) sendToGroups(ctx context.Context, broadcast *store.BroadcastMe
 func (s *Service) sendToUser(ctx context.Context, broadcast *store.BroadcastMessage, user store.User) {
 	// Get user language
 	lang := messages.GetUserLanguage(user.Language, "")
-	msgManager := messages.GetManager()
 	
 	// Format message based on type
 	content := s.formatMessage(broadcast, lang)

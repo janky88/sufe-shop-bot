@@ -117,8 +117,13 @@ func (w *RetryWorker) retryDelivery(order *store.Order) {
 }
 
 func (w *RetryWorker) handleNoStockRetry(order *store.Order) {
+	// Skip if this is a deposit order
+	if order.ProductID == nil {
+		return
+	}
+	
 	// For no-stock orders, we might want to check if stock is now available
-	stock, err := store.CountAvailableCodes(w.db, order.ProductID)
+	stock, err := store.CountAvailableCodes(w.db, *order.ProductID)
 	if err != nil {
 		logger.Error("Failed to check stock", "order_id", order.ID, "error", err)
 		return
@@ -127,7 +132,7 @@ func (w *RetryWorker) handleNoStockRetry(order *store.Order) {
 	if stock > 0 {
 		// Stock is now available, try to claim and deliver
 		ctx := context.Background()
-		code, err := store.ClaimOneCodeTx(ctx, w.db, order.ProductID, order.ID)
+		code, err := store.ClaimOneCodeTx(ctx, w.db, *order.ProductID, order.ID)
 		if err == nil {
 			// Successfully claimed code, deliver it
 			if err := w.sendCodeToUser(order, code); err == nil {
@@ -150,9 +155,14 @@ func (w *RetryWorker) sendCodeToUser(order *store.Order, code string) error {
 	}
 	
 	// Render message
+	productName := "Unknown"
+	if order.Product != nil {
+		productName = order.Product.Name
+	}
+	
 	message, err := store.RenderTemplate(tmpl.Content, map[string]interface{}{
 		"OrderID":     order.ID,
-		"ProductName": order.Product.Name,
+		"ProductName": productName,
 		"Code":        code,
 	})
 	if err != nil {

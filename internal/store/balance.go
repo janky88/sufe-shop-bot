@@ -1,7 +1,6 @@
 package store
 
 import (
-	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"errors"

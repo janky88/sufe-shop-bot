@@ -8,13 +8,17 @@ RUN apk add --no-cache git make
 WORKDIR /build
 
 # Copy go mod files
-COPY go.mod go.sum ./
+COPY go.mod ./
+COPY go.sum* ./
 
 # Download dependencies
 RUN go mod download
 
 # Copy source code
 COPY . .
+
+# Tidy dependencies
+RUN go mod tidy
 
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o shopbot ./cmd/server
@@ -47,11 +51,11 @@ RUN mkdir -p /app/logs /app/data && \
 USER shopbot
 
 # Expose port
-EXPOSE 7832
+EXPOSE 9147
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:7832/healthz || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:9147/healthz || exit 1
 
 # Run the application
 CMD ["/app/shopbot"]

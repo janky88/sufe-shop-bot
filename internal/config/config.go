@@ -37,6 +37,10 @@ type Config struct {
 	// HTTP Server configuration
 	Port        int    `envconfig:"PORT" default:"7832"`
 	
+	// Currency configuration
+	Currency     string `envconfig:"CURRENCY" default:"CNY"` // CNY, USD, EUR, etc.
+	CurrencySymbol string `envconfig:"CURRENCY_SYMBOL" default:"¥"` // ¥, $, €, etc.
+	
 	// Redis configuration - individual fields
 	RedisHost     string `envconfig:"REDIS_HOST" default:"localhost"`
 	RedisPort     string `envconfig:"REDIS_PORT" default:"6379"`

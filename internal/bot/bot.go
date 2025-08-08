@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -25,6 +26,10 @@ type Bot struct {
 	config    *config.Config
 	msg       *messages.Manager
 	broadcast *broadcast.Service
+	
+	// User state management
+	userStates     map[int64]string
+	userStatesMutex sync.RWMutex
 }
 
 func New(token string, db *gorm.DB) (*Bot, error) {
@@ -52,6 +57,7 @@ func New(token string, db *gorm.DB) (*Bot, error) {
 		config: cfg,
 		msg:    messages.GetManager(),
 		broadcast: broadcast.NewService(db, api),
+		userStates: make(map[int64]string),
 	}, nil
 }
 
@@ -89,6 +95,11 @@ func (b *Bot) HandleWebhookUpdate(update tgbotapi.Update) {
 }
 
 func (b *Bot) handleUpdate(update tgbotapi.Update) {
+	// Log update details
+	logger.Info("Processing update", "update_id", update.UpdateID,
+		"has_message", update.Message != nil,
+		"has_callback", update.CallbackQuery != nil)
+	
 	// Handle callback queries (inline keyboard buttons)
 	if update.CallbackQuery != nil {
 		metrics.BotMessagesReceived.WithLabelValues("callback").Inc()
@@ -121,6 +132,7 @@ func (b *Bot) handleUpdate(update tgbotapi.Update) {
 	// Handle text messages (ReplyKeyboard buttons)
 	if update.Message.Text != "" {
 		metrics.BotMessagesReceived.WithLabelValues("text").Inc()
+		logger.Info("Handling text message", "text", update.Message.Text, "from", update.Message.From.ID)
 		b.handleTextMessage(update.Message)
 	}
 }
@@ -178,6 +190,20 @@ func (b *Bot) handleTextMessage(message *tgbotapi.Message) {
 	user, _ := store.GetOrCreateUser(b.db, message.From.ID, message.From.UserName)
 	lang := messages.GetUserLanguage(user.Language, message.From.LanguageCode)
 	
+	// Log the received message text for debugging
+	logger.Info("Received text message", "text", message.Text, "user_id", user.ID)
+	
+	// Check if user is in custom deposit state
+	b.userStatesMutex.RLock()
+	userState, hasState := b.userStates[message.From.ID]
+	b.userStatesMutex.RUnlock()
+	
+	if hasState && userState == "awaiting_deposit_amount" {
+		// Handle custom deposit amount
+		b.handleCustomDepositAmount(message)
+		return
+	}
+	
 	// Check against localized button texts
 	switch message.Text {
 	case b.msg.Get(lang, "btn_buy"), "Buy":
@@ -187,6 +213,7 @@ func (b *Bot) handleTextMessage(message *tgbotapi.Message) {
 	case b.msg.Get(lang, "btn_profile"), "Profile":
 		b.handleProfile(message)
 	case b.msg.Get(lang, "btn_orders"), "Orders", "My Orders":
+		logger.Info("Handling my orders request", "user_id", user.ID)
 		b.handleMyOrders(message)
 	case b.msg.Get(lang, "btn_faq"), "FAQ":
 		b.handleFAQ(message)
@@ -196,6 +223,8 @@ func (b *Bot) handleTextMessage(message *tgbotapi.Message) {
 		// Check if it's a recharge card code (starts with specific prefix)
 		if strings.HasPrefix(message.Text, "RC-") || strings.HasPrefix(message.Text, "充值卡-") {
 			b.handleRechargeCard(message)
+		} else {
+			logger.Info("Unhandled message text", "text", message.Text, "user_id", user.ID)
 		}
 	}
 }
@@ -231,8 +260,12 @@ func (b *Bot) handleBuy(message *tgbotapi.Message) {
 		}
 		
 		// Format button text: "Name - $Price (Stock)"
-		buttonText := fmt.Sprintf("%s - $%.2f (%d)", 
+		// Get currency symbol
+		_, currencySymbol := store.GetCurrencySettings(b.db, b.config)
+		
+		buttonText := fmt.Sprintf("%s - %s%.2f (%d)", 
 			product.Name, 
+			currencySymbol,
 			float64(product.PriceCents)/100, 
 			stock,
 		)
@@ -294,11 +327,27 @@ func (b *Bot) handleCallbackQuery(callback *tgbotapi.CallbackQuery) {
 			From: callback.From,
 		}
 		b.handleMyOrders(msg)
+	} else if strings.HasPrefix(callback.Data, "orders_page:") {
+		// Handle pagination for orders
+		pageStr := strings.TrimPrefix(callback.Data, "orders_page:")
+		page, err := strconv.Atoi(pageStr)
+		if err == nil {
+			// Edit the existing message with new page
+			b.handleMyOrdersPageEdit(callback, page)
+		}
+	} else if callback.Data == "noop" {
+		// No operation - just acknowledge the callback
+		b.api.Request(tgbotapi.NewCallback(callback.ID, ""))
+		return
 	} else if strings.HasPrefix(callback.Data, "order:") {
 		orderIDStr := strings.TrimPrefix(callback.Data, "order:")
 		var orderID uint
 		fmt.Sscanf(orderIDStr, "%d", &orderID)
-		b.handleOrderDetails(callback, orderID)
+		if orderID > 0 {
+			b.handleOrderDetails(callback, orderID)
+		}
+	} else if strings.HasPrefix(callback.Data, "deposit_") {
+		b.handleDepositCallback(callback)
 	}
 }
 
@@ -313,6 +362,9 @@ func (b *Bot) handleBuyProduct(callback *tgbotapi.CallbackQuery, productID uint)
 	}
 	
 	lang := messages.GetUserLanguage(user.Language, callback.From.LanguageCode)
+	
+	// Get currency symbol
+	_, currencySymbol := store.GetCurrencySettings(b.db, b.config)
 	
 	// Get product
 	product, err := store.GetProduct(b.db, productID)
@@ -352,6 +404,7 @@ func (b *Bot) handleBuyProduct(callback *tgbotapi.CallbackQuery, productID uint)
 		
 		// Ask user if they want to use balance
 		balanceMsg := b.msg.Format(lang, "use_balance_prompt", map[string]interface{}{
+			"Currency": currencySymbol,
 			"Balance": fmt.Sprintf("%.2f", float64(balance)/100),
 			"Product": product.Name,
 			"Price": fmt.Sprintf("%.2f", float64(product.PriceCents)/100),
@@ -375,98 +428,6 @@ func (b *Bot) handleBuyProduct(callback *tgbotapi.CallbackQuery, productID uint)
 	
 	// No balance, proceed directly to create order
 	b.handleConfirmBuy(callback, productID, false)
-	
-	// Track order created metric
-	metrics.OrdersCreated.Inc()
-	
-	// Generate out_trade_no
-	outTradeNo := fmt.Sprintf("%d-%d", order.ID, time.Now().Unix())
-	
-	// Update order with out_trade_no
-	if err := b.db.Model(&store.Order{}).Where("id = ?", order.ID).Update("epay_out_trade_no", outTradeNo).Error; err != nil {
-		logger.Error("Failed to update order out_trade_no", "error", err, "order_id", order.ID)
-	}
-	
-	// Check if payment is configured
-	if b.epay == nil {
-		orderMsg := b.msg.Format(lang, "order_created", map[string]interface{}{
-			"ProductName": product.Name,
-			"Price":       fmt.Sprintf("%.2f", float64(product.PriceCents)/100),
-			"OrderID":     order.ID,
-		})
-		orderMsg += "\n\n" + b.msg.Get(lang, "payment_not_configured")
-		
-		msg := tgbotapi.NewMessage(callback.Message.Chat.ID, orderMsg)
-		b.api.Send(msg)
-		return
-	}
-	
-	// Create payment order
-	notifyURL := fmt.Sprintf("%s/payment/epay/notify", b.config.BaseURL)
-	returnURL := fmt.Sprintf("%s/payment/return", b.config.BaseURL)
-	
-	// Detect client IP (in Telegram bot context, use default)
-	clientIP := "127.0.0.1"
-	
-	// Create order with improved parameters
-	resp, err := b.epay.CreateOrder(epay.CreateOrderParams{
-		OutTradeNo: outTradeNo,
-		Name:       product.Name,
-		Money:      float64(product.PriceCents) / 100,
-		NotifyURL:  notifyURL,
-		ReturnURL:  returnURL,
-		ClientIP:   clientIP,
-		Device:     epay.DeviceMobile, // Most Telegram users are on mobile
-		Param:      fmt.Sprintf("user_%d", user.ID), // Store user ID for reference
-	})
-	
-	if err != nil {
-		logger.Error("Failed to create payment order", "error", err, "order_id", order.ID)
-		b.sendError(callback.Message.Chat.ID, b.msg.Get(lang, "failed_to_create_payment"))
-		return
-	}
-	
-	// Get appropriate payment URL
-	payURL := resp.GetPaymentURL()
-	if payURL == "" {
-		logger.Error("No payment URL returned", "order_id", order.ID)
-		b.sendError(callback.Message.Chat.ID, b.msg.Get(lang, "failed_to_create_payment"))
-		return
-	}
-	
-	// Send payment message with inline button
-	orderMsg := b.msg.Format(lang, "order_created", map[string]interface{}{
-		"ProductName": product.Name,
-		"Price":       fmt.Sprintf("%.2f", float64(product.PriceCents)/100),
-		"OrderID":     order.ID,
-	})
-	
-	// Check if it's a QR code
-	if resp.IsQRCode() {
-		// For QR code payments, we could generate a QR image
-		// For now, just send the URL with instructions
-		orderMsg += "\n\n" + b.msg.Get(lang, "scan_qr_to_pay")
-		msg := tgbotapi.NewMessage(callback.Message.Chat.ID, orderMsg)
-		msg.ParseMode = "Markdown"
-		
-		// Send QR code content as monospace text
-		qrMsg := fmt.Sprintf("```\n%s\n```", payURL)
-		msg.Text = orderMsg + "\n\n" + qrMsg
-		b.api.Send(msg)
-	} else {
-		// Regular payment URL
-		keyboard := tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonURL(b.msg.Get(lang, "pay_now"), payURL),
-			),
-		)
-		
-		msg := tgbotapi.NewMessage(callback.Message.Chat.ID, orderMsg)
-		msg.ReplyMarkup = keyboard
-		b.api.Send(msg)
-	}
-	
-	logger.Info("Order created", "order_id", order.ID, "user_id", user.ID, "product_id", product.ID)
 }
 
 func (b *Bot) handleConfirmBuy(callback *tgbotapi.CallbackQuery, productID uint, useBalance bool) {
@@ -505,6 +466,9 @@ func (b *Bot) handleConfirmBuy(callback *tgbotapi.CallbackQuery, productID uint,
 
 	// Track order created metric
 	metrics.OrdersCreated.Inc()
+	
+	// Get currency symbol
+	_, currencySymbol := store.GetCurrencySettings(b.db, b.config)
 
 	// If payment amount is 0 (fully paid with balance), deliver immediately
 	if order.PaymentAmount == 0 {
@@ -549,8 +513,8 @@ func (b *Bot) handleConfirmBuy(callback *tgbotapi.CallbackQuery, productID uint,
 		return
 	}
 
-	// Generate out_trade_no for payment
-	outTradeNo := fmt.Sprintf("%d-%d", order.ID, time.Now().Unix())
+	// Generate out_trade_no for payment with nanosecond precision to avoid duplicates
+	outTradeNo := fmt.Sprintf("%d-%d", order.ID, time.Now().UnixNano())
 
 	// Update order with out_trade_no
 	if err := b.db.Model(&store.Order{}).Where("id = ?", order.ID).Update("epay_out_trade_no", outTradeNo).Error; err != nil {
@@ -560,6 +524,7 @@ func (b *Bot) handleConfirmBuy(callback *tgbotapi.CallbackQuery, productID uint,
 	// Check if payment is configured
 	if b.epay == nil {
 		orderMsg := b.msg.Format(lang, "order_created", map[string]interface{}{
+			"Currency":    currencySymbol,
 			"ProductName": product.Name,
 			"Price":       fmt.Sprintf("%.2f", float64(order.PaymentAmount)/100),
 			"OrderID":     order.ID,
@@ -567,6 +532,7 @@ func (b *Bot) handleConfirmBuy(callback *tgbotapi.CallbackQuery, productID uint,
 		
 		if order.BalanceUsed > 0 {
 			orderMsg += "\n" + b.msg.Format(lang, "balance_used_info", map[string]interface{}{
+				"Currency":    currencySymbol,
 				"BalanceUsed": fmt.Sprintf("%.2f", float64(order.BalanceUsed)/100),
 			})
 		}
@@ -578,38 +544,19 @@ func (b *Bot) handleConfirmBuy(callback *tgbotapi.CallbackQuery, productID uint,
 		return
 	}
 
-	// Create payment order
+	// Create payment order using submit URL (allows user to choose payment method)
 	notifyURL := fmt.Sprintf("%s/payment/epay/notify", b.config.BaseURL)
 	returnURL := fmt.Sprintf("%s/payment/return", b.config.BaseURL)
 
-	// Detect client IP (in Telegram bot context, use default)
-	clientIP := "127.0.0.1"
-
-	// Create order with improved parameters
-	resp, err := b.epay.CreateOrder(epay.CreateOrderParams{
+	// Create submit URL for payment page
+	payURL := b.epay.CreateSubmitURL(epay.CreateOrderParams{
 		OutTradeNo: outTradeNo,
 		Name:       product.Name,
 		Money:      float64(order.PaymentAmount) / 100, // Use payment amount after balance deduction
 		NotifyURL:  notifyURL,
 		ReturnURL:  returnURL,
-		ClientIP:   clientIP,
-		Device:     epay.DeviceMobile, // Most Telegram users are on mobile
 		Param:      fmt.Sprintf("user_%d", user.ID), // Store user ID for reference
 	})
-
-	if err != nil {
-		logger.Error("Failed to create payment order", "error", err, "order_id", order.ID)
-		b.sendError(callback.Message.Chat.ID, b.msg.Get(lang, "failed_to_create_payment"))
-		return
-	}
-
-	// Get appropriate payment URL
-	payURL := resp.GetPaymentURL()
-	if payURL == "" {
-		logger.Error("No payment URL returned", "order_id", order.ID)
-		b.sendError(callback.Message.Chat.ID, b.msg.Get(lang, "failed_to_create_payment"))
-		return
-	}
 
 	// Send payment message with inline button
 	orderMsg := b.msg.Format(lang, "order_created", map[string]interface{}{
@@ -624,30 +571,16 @@ func (b *Bot) handleConfirmBuy(callback *tgbotapi.CallbackQuery, productID uint,
 		})
 	}
 
-	// Check if it's a QR code
-	if resp.IsQRCode() {
-		// For QR code payments, we could generate a QR image
-		// For now, just send the URL with instructions
-		orderMsg += "\n\n" + b.msg.Get(lang, "scan_qr_to_pay")
-		msg := tgbotapi.NewMessage(callback.Message.Chat.ID, orderMsg)
-		msg.ParseMode = "Markdown"
-		
-		// Send QR code content as monospace text
-		qrMsg := fmt.Sprintf("```\n%s\n```", payURL)
-		msg.Text = orderMsg + "\n\n" + qrMsg
-		b.api.Send(msg)
-	} else {
-		// Regular payment URL
-		keyboard := tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonURL(b.msg.Get(lang, "pay_now"), payURL),
-			),
-		)
-		
-		msg := tgbotapi.NewMessage(callback.Message.Chat.ID, orderMsg)
-		msg.ReplyMarkup = keyboard
-		b.api.Send(msg)
-	}
+	// Send payment message with inline button
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonURL(b.msg.Get(lang, "pay_now"), payURL),
+		),
+	)
+	
+	msg := tgbotapi.NewMessage(callback.Message.Chat.ID, orderMsg)
+	msg.ReplyMarkup = keyboard
+	b.api.Send(msg)
 
 	logger.Info("Order created", "order_id", order.ID, "user_id", user.ID, "product_id", product.ID, "balance_used", order.BalanceUsed)
 }
@@ -660,12 +593,126 @@ func (b *Bot) handleDeposit(message *tgbotapi.Message) {
 	// Get current balance
 	balance, _ := store.GetUserBalance(b.db, user.ID)
 	
+	// Get currency symbol
+	_, currencySymbol := store.GetCurrencySettings(b.db, b.config)
+	
 	depositMsg := b.msg.Format(lang, "deposit_info", map[string]interface{}{
+		"Currency": currencySymbol,
 		"Balance": fmt.Sprintf("%.2f", float64(balance)/100),
 	})
 	
+	// Add deposit options
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("💵 %s10", currencySymbol), "deposit_10"),
+			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("💵 %s20", currencySymbol), "deposit_20"),
+			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("💵 %s50", currencySymbol), "deposit_50"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("💵 %s100", currencySymbol), "deposit_100"),
+			tgbotapi.NewInlineKeyboardButtonData("🔢 "+b.msg.Get(lang, "custom_amount"), "deposit_custom"),
+		),
+	)
+	
 	msg := tgbotapi.NewMessage(message.Chat.ID, depositMsg)
+	msg.ReplyMarkup = keyboard
+	msg.ParseMode = "Markdown"
 	b.api.Send(msg)
+}
+
+func (b *Bot) handleDepositCallback(callback *tgbotapi.CallbackQuery) {
+	// Get user for language
+	user, err := store.GetOrCreateUser(b.db, callback.From.ID, callback.From.UserName)
+	if err != nil {
+		logger.Error("Failed to get user", "error", err)
+		return
+	}
+	
+	lang := messages.GetUserLanguage(user.Language, callback.From.LanguageCode)
+	
+	// Get currency symbol
+	_, currencySymbol := store.GetCurrencySettings(b.db, b.config)
+	
+	// Check if payment is configured
+	if b.epay == nil {
+		b.api.Request(tgbotapi.NewCallback(callback.ID, b.msg.Get(lang, "payment_not_configured")))
+		return
+	}
+	
+	// Parse deposit amount
+	var amountCents int
+	switch callback.Data {
+	case "deposit_10":
+		amountCents = 1000
+	case "deposit_20":
+		amountCents = 2000
+	case "deposit_50":
+		amountCents = 5000
+	case "deposit_100":
+		amountCents = 10000
+	case "deposit_custom":
+		// Set user state to awaiting deposit amount
+		b.userStatesMutex.Lock()
+		b.userStates[callback.From.ID] = "awaiting_deposit_amount"
+		b.userStatesMutex.Unlock()
+		
+		msg := tgbotapi.NewMessage(callback.Message.Chat.ID, b.msg.Get(lang, "custom_amount_instruction"))
+		b.api.Send(msg)
+		b.api.Request(tgbotapi.NewCallback(callback.ID, ""))
+		return
+	default:
+		return
+	}
+	
+	// Create a deposit order
+	order, err := store.CreateDepositOrder(b.db, user.ID, amountCents)
+	if err != nil {
+		logger.Error("Failed to create deposit order", "error", err)
+		b.sendError(callback.Message.Chat.ID, b.msg.Get(lang, "failed_to_create_order"))
+		return
+	}
+	
+	// Generate payment URL with nanosecond precision to avoid duplicates
+	outTradeNo := fmt.Sprintf("D%d-%d", order.ID, time.Now().UnixNano())
+	
+	// Update order with out_trade_no
+	if err := b.db.Model(&store.Order{}).Where("id = ?", order.ID).Update("epay_out_trade_no", outTradeNo).Error; err != nil {
+		logger.Error("Failed to update order out_trade_no", "error", err, "order_id", order.ID)
+	}
+	
+	// Create payment order using submit URL (allows user to choose payment method)
+	notifyURL := fmt.Sprintf("%s/payment/epay/notify", b.config.BaseURL)
+	returnURL := fmt.Sprintf("%s/payment/return", b.config.BaseURL)
+	
+	// Create submit URL for payment page
+	payURL := b.epay.CreateSubmitURL(epay.CreateOrderParams{
+		OutTradeNo: outTradeNo,
+		Name:       fmt.Sprintf("充值 %s%.2f", currencySymbol, float64(amountCents)/100),
+		Money:      float64(amountCents) / 100,
+		NotifyURL:  notifyURL,
+		ReturnURL:  returnURL,
+		Param:      fmt.Sprintf("deposit_%d", user.ID),
+	})
+	
+	// Send payment message
+	depositMsg := b.msg.Format(lang, "deposit_order_created", map[string]interface{}{
+		"Currency": currencySymbol,
+		"Amount":  fmt.Sprintf("%.2f", float64(amountCents)/100),
+		"OrderID": order.ID,
+	})
+	
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonURL(b.msg.Get(lang, "pay_now"), payURL),
+		),
+	)
+	
+	msg := tgbotapi.NewMessage(callback.Message.Chat.ID, depositMsg)
+	msg.ReplyMarkup = keyboard
+	msg.ParseMode = "Markdown"
+	b.api.Send(msg)
+	
+	logger.Info("Deposit order created", "order_id", order.ID, "user_id", user.ID, "amount", amountCents)
 }
 
 func (b *Bot) handleProfile(message *tgbotapi.Message) {
@@ -681,11 +728,15 @@ func (b *Bot) handleProfile(message *tgbotapi.Message) {
 	// Get user balance
 	balance, _ := store.GetUserBalance(b.db, user.ID)
 	
+	// Get currency symbol
+	_, currencySymbol := store.GetCurrencySettings(b.db, b.config)
+	
 	profileMsg := b.msg.Format(lang, "profile_info", map[string]interface{}{
 		"UserID":     user.TgUserID,
 		"Username":   user.Username,
 		"Language":   user.Language,
 		"JoinedDate": user.CreatedAt.Format("2006-01-02"),
+		"Currency":   currencySymbol,
 		"Balance":    fmt.Sprintf("%.2f", float64(balance)/100),
 	})
 	
@@ -709,10 +760,37 @@ func (b *Bot) handleFAQ(message *tgbotapi.Message) {
 	user, _ := store.GetOrCreateUser(b.db, message.From.ID, message.From.UserName)
 	lang := messages.GetUserLanguage(user.Language, message.From.LanguageCode)
 	
-	faqContent := b.msg.Get(lang, "faq_content")
+	// Get FAQs from database
+	faqs, err := store.GetActiveFAQs(b.db, lang)
+	if err != nil {
+		logger.Error("Failed to get FAQs", "error", err, "language", lang)
+		// Fall back to static content
+		faqContent := b.msg.Get(lang, "faq_content")
+		faqTitle := b.msg.Get(lang, "faq_title")
+		msg := tgbotapi.NewMessage(message.Chat.ID, faqTitle+"\n\n"+faqContent)
+		b.api.Send(msg)
+		return
+	}
+	
+	// Build FAQ message
 	faqTitle := b.msg.Get(lang, "faq_title")
+	var faqContent string
+	
+	if len(faqs) == 0 {
+		// No FAQs found, use default message
+		faqContent = b.msg.Get(lang, "faq_content")
+	} else {
+		// Format FAQs
+		for i, faq := range faqs {
+			if i > 0 {
+				faqContent += "\n\n"
+			}
+			faqContent += fmt.Sprintf("❓ *%s*\n%s", escapeMarkdown(faq.Question), escapeMarkdown(faq.Answer))
+		}
+	}
 	
 	msg := tgbotapi.NewMessage(message.Chat.ID, faqTitle+"\n\n"+faqContent)
+	msg.ParseMode = "Markdown"
 	b.api.Send(msg)
 }
 
@@ -738,8 +816,12 @@ func (b *Bot) UpdateInlineStock(chatID int64, messageID int) error {
 			stock = 0
 		}
 		
-		buttonText := fmt.Sprintf("%s - $%.2f (%d)", 
+		// Get currency symbol
+		_, currencySymbol := store.GetCurrencySettings(b.db, b.config)
+		
+		buttonText := fmt.Sprintf("%s - %s%.2f (%d)", 
 			product.Name, 
+			currencySymbol,
 			float64(product.PriceCents)/100, 
 			stock,
 		)
@@ -796,4 +878,145 @@ func (b *Bot) RemoveWebhook() error {
 	
 	logger.Info("Webhook removed successfully")
 	return nil
+}
+
+func (b *Bot) handleCustomDepositAmount(message *tgbotapi.Message) {
+	// Clear user state
+	b.userStatesMutex.Lock()
+	delete(b.userStates, message.From.ID)
+	b.userStatesMutex.Unlock()
+	
+	// Get user for language
+	user, err := store.GetOrCreateUser(b.db, message.From.ID, message.From.UserName)
+	if err != nil {
+		logger.Error("Failed to get user", "error", err)
+		return
+	}
+	
+	lang := messages.GetUserLanguage(user.Language, message.From.LanguageCode)
+	
+	// Check if payment is configured
+	if b.epay == nil {
+		b.sendError(message.Chat.ID, b.msg.Get(lang, "payment_not_configured"))
+		return
+	}
+	
+	// Parse amount from message
+	amountStr := strings.TrimSpace(message.Text)
+	amount, err := strconv.ParseFloat(amountStr, 64)
+	if err != nil || amount <= 0 {
+		msg := tgbotapi.NewMessage(message.Chat.ID, "❌ 请输入有效的金额，例如：30")
+		b.api.Send(msg)
+		
+		// Set state again to allow retry
+		b.userStatesMutex.Lock()
+		b.userStates[message.From.ID] = "awaiting_deposit_amount"
+		b.userStatesMutex.Unlock()
+		return
+	}
+	
+	// Convert to cents
+	amountCents := int(amount * 100)
+	
+	// Check minimum and maximum limits
+	if amountCents < 100 { // Minimum $1
+		msg := tgbotapi.NewMessage(message.Chat.ID, "❌ 最低充值金额为 1 元")
+		b.api.Send(msg)
+		
+		// Set state again to allow retry
+		b.userStatesMutex.Lock()
+		b.userStates[message.From.ID] = "awaiting_deposit_amount"
+		b.userStatesMutex.Unlock()
+		return
+	}
+	
+	if amountCents > 1000000 { // Maximum $10,000
+		msg := tgbotapi.NewMessage(message.Chat.ID, "❌ 最高充值金额为 10,000 元")
+		b.api.Send(msg)
+		
+		// Set state again to allow retry
+		b.userStatesMutex.Lock()
+		b.userStates[message.From.ID] = "awaiting_deposit_amount"
+		b.userStatesMutex.Unlock()
+		return
+	}
+	
+	// Create a deposit order
+	order, err := store.CreateDepositOrder(b.db, user.ID, amountCents)
+	if err != nil {
+		logger.Error("Failed to create deposit order", "error", err)
+		b.sendError(message.Chat.ID, b.msg.Get(lang, "failed_to_create_order"))
+		return
+	}
+	
+	// Generate payment URL with nanosecond precision to avoid duplicates
+	outTradeNo := fmt.Sprintf("D%d-%d", order.ID, time.Now().UnixNano())
+	
+	// Update order with out_trade_no
+	if err := b.db.Model(&store.Order{}).Where("id = ?", order.ID).Update("epay_out_trade_no", outTradeNo).Error; err != nil {
+		logger.Error("Failed to update order out_trade_no", "error", err, "order_id", order.ID)
+	}
+	
+	// Create payment order using submit URL (allows user to choose payment method)
+	notifyURL := fmt.Sprintf("%s/payment/epay/notify", b.config.BaseURL)
+	returnURL := fmt.Sprintf("%s/payment/return", b.config.BaseURL)
+	
+	// Get currency symbol
+	_, currencySymbol := store.GetCurrencySettings(b.db, b.config)
+	
+	// Create submit URL for payment page
+	payURL := b.epay.CreateSubmitURL(epay.CreateOrderParams{
+		OutTradeNo: outTradeNo,
+		Name:       fmt.Sprintf("充值 %s%.2f", currencySymbol, float64(amountCents)/100),
+		Money:      float64(amountCents) / 100,
+		NotifyURL:  notifyURL,
+		ReturnURL:  returnURL,
+		Param:      fmt.Sprintf("deposit_%d", user.ID),
+	})
+	
+	// Send payment message
+	depositMsg := b.msg.Format(lang, "deposit_order_created", map[string]interface{}{
+		"Currency": currencySymbol,
+		"Amount":  fmt.Sprintf("%.2f", float64(amountCents)/100),
+		"OrderID": order.ID,
+	})
+	
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonURL(b.msg.Get(lang, "pay_now"), payURL),
+		),
+	)
+	
+	msg := tgbotapi.NewMessage(message.Chat.ID, depositMsg)
+	msg.ReplyMarkup = keyboard
+	msg.ParseMode = "Markdown"
+	b.api.Send(msg)
+	
+	logger.Info("Custom deposit order created", "user_id", user.ID, "amount_cents", amountCents, "order_id", order.ID)
+}
+
+// escapeMarkdown escapes special characters for Telegram Markdown
+func escapeMarkdown(text string) string {
+	// Characters that need to be escaped in Telegram Markdown
+	replacer := strings.NewReplacer(
+		"_", "\\_",
+		"*", "\\*",
+		"[", "\\[",
+		"]", "\\]",
+		"(", "\\(",
+		")", "\\)",
+		"~", "\\~",
+		"`", "\\`",
+		">", "\\>",
+		"#", "\\#",
+		"+", "\\+",
+		"-", "\\-",
+		"=", "\\=",
+		"|", "\\|",
+		"{", "\\{",
+		"}", "\\}",
+		".", "\\.",
+		"!", "\\!",
+	)
+	return replacer.Replace(text)
 }

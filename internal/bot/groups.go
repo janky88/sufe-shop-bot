@@ -264,13 +264,13 @@ func (b *Bot) handleGroupToggle(callback *tgbotapi.CallbackQuery) {
 	keyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData(
-				fmt.Sprintf("库存通知 Stock: %s", formatBool(group.NotifyStock, "en")),
+				fmt.Sprintf("库存通知 Stock: %s", formatBool(group.NotifyStock, lang)),
 				fmt.Sprintf("group_toggle_stock:%d", group.ID),
 			),
 		),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData(
-				fmt.Sprintf("促销通知 Promo: %s", formatBool(group.NotifyPromo, "en")),
+				fmt.Sprintf("促销通知 Promo: %s", formatBool(group.NotifyPromo, lang)),
 				fmt.Sprintf("group_toggle_promo:%d", group.ID),
 			),
 		),

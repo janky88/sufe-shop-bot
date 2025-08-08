@@ -1,185 +1,604 @@
 <!DOCTYPE html>
-<html>
+<html data-theme="light">
 <head>
-    <title>Products - Shop Bot Admin</title>
+    <title>商品管理 - 商城机器人管理中心</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="stylesheet" href="/static/theme.css">
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        h1 { color: #333; }
-        .nav { margin-bottom: 20px; }
-        .nav a { margin-right: 20px; color: #007bff; text-decoration: none; }
-        .nav a:hover { text-decoration: underline; }
-        .actions { margin-bottom: 20px; }
-        .btn { padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; }
-        .btn:hover { background: #0056b3; }
-        .btn.danger { background: #dc3545; }
-        .btn.danger:hover { background: #c82333; }
-        table { width: 100%; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background: #f8f8f8; font-weight: bold; }
-        .active { color: #28a745; }
-        .inactive { color: #dc3545; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
-        .modal-content { background: white; margin: 50px auto; padding: 20px; width: 90%; max-width: 500px; border-radius: 8px; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; }
-        .form-group input, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        /* Modern UI Base Styles with Aurora Gradient */
+        * { 
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --aurora-gradient: linear-gradient(
+                45deg,
+                rgba(102, 126, 234, 0.1) 0%,
+                rgba(118, 75, 162, 0.1) 25%,
+                rgba(255, 154, 139, 0.1) 50%,
+                rgba(255, 206, 84, 0.1) 75%,
+                rgba(102, 126, 234, 0.1) 100%
+            );
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Aurora Background Animation */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(255, 154, 139, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(255, 206, 84, 0.2) 0%, transparent 50%);
+            animation: aurora 20s ease-in-out infinite;
+            z-index: -1;
+        }
+        
+        @keyframes aurora {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(5deg) scale(1.1); }
+            50% { transform: rotate(-5deg) scale(1); }
+            75% { transform: rotate(3deg) scale(1.05); }
+        }
+        
+        /* Glassmorphism Header */
+        .header {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 8px 32px var(--shadow-color);
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--aurora-gradient);
+            opacity: 0.5;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+        
+        @keyframes shimmer {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 70px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 32px;
+        }
+        
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-links a:hover,
+        .nav-links a.active {
+            color: var(--text-primary);
+        }
+        
+        .container { 
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+        
+        .page-title {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .btn {
+            padding: 12px 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            color: #1a1a2e;
+            box-shadow: 0 4px 15px rgba(132, 250, 176, 0.3);
+        }
+        
+        .btn-success:hover {
+            box-shadow: 0 6px 20px rgba(132, 250, 176, 0.4);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+        }
+        
+        .btn-danger:hover {
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+        }
+        
+        .btn-sm {
+            padding: 8px 20px;
+            font-size: 13px;
+        }
+        
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 24px;
+        }
+        
+        .product-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 8px 32px var(--shadow-color);
+            transition: all 0.3s ease;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px var(--shadow-color);
+        }
+        
+        .product-name {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+        
+        .product-description {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 20px;
+            min-height: 20px;
+            line-height: 1.5;
+        }
+        
+        .product-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .product-price {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .product-stock {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .stock-available { 
+            background: rgba(132, 250, 176, 0.2);
+            color: #84fab0;
+        }
+        
+        .stock-low { 
+            background: rgba(255, 206, 84, 0.2);
+            color: #ffce54;
+        }
+        
+        .stock-out { 
+            background: rgba(245, 87, 108, 0.2);
+            color: #f5576c;
+        }
+        
+        .product-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .product-actions .btn {
+            flex: 1;
+            padding: 10px 20px;
+            text-align: center;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .modal-content {
+            max-width: 600px;
+            margin: 50px auto;
+            background: var(--glass-bg);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: var(--hover-bg);
+            border-radius: 50%;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            line-height: 1;
+        }
+        
+        .close:hover {
+            background: var(--glass-border);
+            color: var(--text-primary);
+        }
+        
+        .modal-body {
+            padding: 24px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--hover-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .modal-footer {
+            padding: 24px;
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 24px;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+            
+            .product-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Products Management</h1>
-        
-        <div class="nav">
-            <a href="/admin/">Dashboard</a>
-            <a href="/admin/products">Products</a>
-            <a href="/admin/orders">Orders</a>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">商城机器人管理中心</div>
+            <div class="nav-links">
+                <a href="/admin/">仪表盘</a>
+                <a href="/admin/products" class="active">商品管理</a>
+                <a href="/admin/orders">订单管理</a>
+                <a href="/admin/users">用户管理</a>
+                <a href="/admin/recharge-cards">充值卡管理</a>
+                <a href="/admin/broadcast">消息推送</a>
+                <a href="/admin/faq">FAQ管理</a>
+                <a href="/admin/templates">消息模板</a>
+                <a href="/admin/settings">系统设置</a>
+            </div>
         </div>
-        
-        <div class="actions">
-            <button class="btn" onclick="showAddProduct()">Add Product</button>
-        </div>
-        
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Price</th>
-                    <th>Stock</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {{range .products}}
-                <tr>
-                    <td>#{{.ID}}</td>
-                    <td>{{.Name}}</td>
-                    <td>${{printf "%.2f" (divf .PriceCents 100)}}</td>
-                    <td>{{.Stock}}</td>
-                    <td class="{{if .IsActive}}active{{else}}inactive{{end}}">
-                        {{if .IsActive}}Active{{else}}Inactive{{end}}
-                    </td>
-                    <td>
-                        <a href="/admin/products/{{.ID}}/codes" class="btn" style="font-size: 12px; padding: 4px 8px;">Manage Codes</a>
-                        <button class="btn" style="font-size: 12px; padding: 4px 8px;" onclick="editProduct({{.ID}}, '{{.Name}}', {{.PriceCents}}, {{.IsActive}})">Edit</button>
-                        <button class="btn danger" style="font-size: 12px; padding: 4px 8px;" onclick="deleteProduct({{.ID}})">Deactivate</button>
-                    </td>
-                </tr>
-                {{end}}
-            </tbody>
-        </table>
     </div>
     
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">商品管理</h1>
+            <button class="btn" id="addProductBtn">+ 添加商品</button>
+        </div>
+        
+        <div class="product-grid">
+            {{range .products}}
+            <div class="product-card">
+                <div class="product-name">{{.Name}}</div>
+                <div class="product-description">{{if .Description}}{{.Description}}{{else}}暂无描述{{end}}</div>
+                <div class="product-meta">
+                    <div class="product-price">{{$.currency}}{{printf "%.2f" (divf .PriceCents 100)}}</div>
+                    <div class="product-stock {{if gt .Stock 10}}stock-available{{else if gt .Stock 0}}stock-low{{else}}stock-out{{end}}">
+                        库存: {{.Stock}}
+                    </div>
+                </div>
+                <div class="product-actions">
+                    <a href="/admin/products/{{.ID}}/codes" class="btn btn-success btn-sm">管理卡密</a>
+                    <button class="btn btn-sm" onclick="editProduct({{.ID}})">编辑</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteProduct({{.ID}})">删除</button>
+                </div>
+            </div>
+            {{end}}
+        </div>
+    </div>
+    
+    <!-- Add/Edit Product Modal -->
     <div id="productModal" class="modal">
         <div class="modal-content">
-            <h2 id="modalTitle">Add Product</h2>
-            <form id="productForm">
-                <input type="hidden" id="productId">
-                <div class="form-group">
-                    <label>Name</label>
-                    <input type="text" id="productName" required>
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">添加商品</h2>
+                <button class="close" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="productForm" onsubmit="saveProduct(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="productId" name="id">
+                    <div class="form-group">
+                        <label>商品名称</label>
+                        <input type="text" id="productName" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>商品描述</label>
+                        <textarea id="productDescription" name="description" placeholder="输入商品描述..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>价格（{{.currency}}）</label>
+                        <input type="number" id="productPrice" name="price" step="0.01" min="0" required>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Price ($)</label>
-                    <input type="number" id="productPrice" step="0.01" min="0" required>
+                <div class="modal-footer">
+                    <button type="button" class="btn" style="background: var(--glass-bg); color: var(--text-primary);" onclick="closeModal()">取消</button>
+                    <button type="submit" class="btn btn-success">保存</button>
                 </div>
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="productActive" checked> Active
-                    </label>
-                </div>
-                <button type="submit" class="btn">Save</button>
-                <button type="button" class="btn" style="background: #6c757d;" onclick="closeModal()">Cancel</button>
             </form>
         </div>
     </div>
     
     <script>
-        const modal = document.getElementById('productModal');
-        const form = document.getElementById('productForm');
-        
-        function showAddProduct() {
-            document.getElementById('modalTitle').textContent = 'Add Product';
-            document.getElementById('productId').value = '';
-            document.getElementById('productName').value = '';
-            document.getElementById('productPrice').value = '';
-            document.getElementById('productActive').checked = true;
-            modal.style.display = 'block';
-        }
-        
-        function editProduct(id, name, priceCents, isActive) {
-            document.getElementById('modalTitle').textContent = 'Edit Product';
-            document.getElementById('productId').value = id;
-            document.getElementById('productName').value = name;
-            document.getElementById('productPrice').value = priceCents / 100;
-            document.getElementById('productActive').checked = isActive;
-            modal.style.display = 'block';
-        }
-        
-        function closeModal() {
-            modal.style.display = 'none';
-        }
-        
-        function deleteProduct(id) {
-            if (!confirm('Deactivate this product?')) return;
+        (function() {
+            'use strict';
             
-            fetch(`/admin/products/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': 'Bearer ' + getAdminToken()
-                }
-            }).then(response => {
-                if (response.ok) {
-                    location.reload();
-                } else {
-                    alert('Failed to deactivate product');
-                }
-            });
-        }
-        
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
+            const modal = document.getElementById('productModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const productForm = document.getElementById('productForm');
+            const productIdInput = document.getElementById('productId');
+            const productNameInput = document.getElementById('productName');
+            const productDescriptionInput = document.getElementById('productDescription');
+            const productPriceInput = document.getElementById('productPrice');
             
-            const id = document.getElementById('productId').value;
-            const data = {
-                name: document.getElementById('productName').value,
-                price: parseFloat(document.getElementById('productPrice').value),
-                is_active: document.getElementById('productActive').checked
+            // Store products data
+            window.productsData = {};
+            {{range .products}}
+            window.productsData[{{.ID}}] = {
+                name: `{{.Name}}`,
+                description: `{{.Description}}`,
+                price_cents: {{.PriceCents}}
             };
+            {{end}}
             
-            const url = id ? `/admin/products/${id}` : '/admin/products';
-            const method = id ? 'PUT' : 'POST';
+            function showModal(title) {
+                modalTitle.textContent = title;
+                modal.style.display = 'block';
+            }
             
-            const response = await fetch(url, {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + getAdminToken()
-                },
-                body: JSON.stringify(data)
+            window.closeModal = function() {
+                modal.style.display = 'none';
+                productForm.reset();
+            }
+            
+            document.getElementById('addProductBtn').addEventListener('click', function() {
+                productIdInput.value = '';
+                showModal('添加商品');
             });
             
-            if (response.ok) {
-                location.reload();
-            } else {
-                alert('Failed to save product');
+            window.editProduct = function(id) {
+                const product = window.productsData[id];
+                if (!product) return;
+                
+                productIdInput.value = id;
+                productNameInput.value = product.name;
+                productDescriptionInput.value = product.description || '';
+                productPriceInput.value = (product.price_cents / 100).toFixed(2);
+                showModal('编辑商品');
             }
-        });
-        
-        function getAdminToken() {
-            // In a real app, this should be handled more securely
-            return localStorage.getItem('admin_token') || prompt('Enter admin token:');
-        }
-        
-        window.onclick = function(event) {
-            if (event.target == modal) {
-                closeModal();
+            
+            window.saveProduct = function(event) {
+                event.preventDefault();
+                
+                const id = productIdInput.value;
+                const data = {
+                    name: productNameInput.value,
+                    description: productDescriptionInput.value,
+                    price_cents: Math.round(parseFloat(productPriceInput.value) * 100)
+                };
+                
+                const url = id ? `/admin/products/${id}` : '/admin/products';
+                const method = id ? 'PUT' : 'POST';
+                
+                fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.error || '保存失败');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert(data.message || '保存成功！');
+                    window.location.reload();
+                })
+                .catch(error => {
+                    alert('保存失败: ' + error.message);
+                });
             }
-        }
+            
+            window.deleteProduct = function(id) {
+                if (!confirm('确定要删除这个商品吗？删除后不可恢复。')) {
+                    return;
+                }
+                
+                fetch(`/admin/products/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.error || '删除失败');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert(data.message || '删除成功！');
+                    window.location.reload();
+                })
+                .catch(error => {
+                    alert('删除失败: ' + error.message);
+                });
+            }
+            
+            // Close modal when clicking outside
+            window.onclick = function(event) {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            }
+        })();
     </script>
+    <script src="/static/theme.js"></script>
 </body>
 </html>

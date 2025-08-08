@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html data-theme="light">
 <head>
-    <title>订单管理 - 商城机器人管理中心</title>
+    <title>用户详情 - 商城机器人管理中心</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#ffffff">
@@ -174,84 +174,110 @@
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
         }
         
-        /* Page Title */
-        .page-title {
-            font-size: 32px;
-            font-weight: 700;
+        /* Breadcrumb */
+        .breadcrumb {
+            margin-bottom: 24px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .breadcrumb a {
+            color: #667eea;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .breadcrumb a:hover {
+            color: #764ba2;
+        }
+        
+        /* User Info Card */
+        .user-info-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 32px;
             margin-bottom: 32px;
+            box-shadow: 0 8px 32px var(--shadow-color);
+        }
+        
+        .user-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 32px;
+        }
+        
+        .user-basic {
+            flex: 1;
+        }
+        
+        .user-name {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
         
-        /* Filters Section */
-        .filters {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 8px 32px var(--shadow-color);
-        }
-        
-        .filters form {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-            align-items: flex-end;
-        }
-        
-        .form-group {
-            flex: 1;
-            min-width: 200px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
+        .user-id {
+            font-size: 16px;
             color: var(--text-secondary);
-            font-size: 14px;
         }
         
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 10px 16px;
+        .balance-section {
+            text-align: right;
+        }
+        
+        .balance-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .balance-value {
+            font-size: 36px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .user-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+        }
+        
+        .detail-item {
+            padding: 20px;
             background: var(--hover-bg);
-            border: 1px solid var(--glass-bg);
             border-radius: 12px;
-            color: var(--text-primary);
-            font-size: 14px;
-            transition: all 0.3s ease;
         }
         
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            background: rgba(255, 255, 255, 0.08);
+        .detail-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
         }
         
-        .btn {
-            padding: 10px 24px;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 14px;
+        .detail-value {
+            font-size: 18px;
             font-weight: 500;
-            transition: all 0.3s ease;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            color: var(--text-primary);
         }
         
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        /* Section Title */
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: var(--text-primary);
         }
         
         /* Table Container */
@@ -263,6 +289,7 @@
             border-radius: 20px;
             overflow: hidden;
             box-shadow: 0 8px 32px var(--shadow-color);
+            margin-bottom: 32px;
         }
         
         table {
@@ -323,6 +350,11 @@
             color: #f5576c;
         }
         
+        .status.expired {
+            background: rgba(255, 154, 139, 0.2);
+            color: #ff9a8b;
+        }
+        
         /* Code Text */
         .code-text {
             font-family: 'Courier New', monospace;
@@ -343,53 +375,6 @@
             background: var(--glass-bg);
         }
         
-        /* Pagination */
-        .pagination {
-            margin-top: 24px;
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            align-items: center;
-        }
-        
-        .pagination a {
-            padding: 8px 16px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-        
-        .pagination a:hover {
-            background: var(--glass-bg);
-            color: var(--text-primary);
-        }
-        
-        .pagination a.active {
-            background: var(--primary-gradient);
-            color: var(--text-primary);
-            border-color: transparent;
-        }
-        
-        /* User Info */
-        .user-info {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-        
-        .user-name {
-            font-weight: 500;
-        }
-        
-        .user-id {
-            font-size: 12px;
-            color: var(--text-tertiary);
-        }
-        
         .order-id {
             font-weight: 600;
             color: #667eea;
@@ -400,12 +385,37 @@
             color: #84fab0;
         }
         
-        .trade-no {
-            font-family: monospace;
-            font-size: 12px;
-            color: var(--text-secondary);
+        /* Responsive */
+        @media (max-width: 768px) {
+            .user-header {
+                flex-direction: column;
+                gap: 24px;
+            }
+            
+            .balance-section {
+                text-align: left;
+            }
+            
+            .user-details {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
+    <script>
+    function logout() {
+        fetch('/api/logout', { method: 'POST' })
+            .then(() => window.location.href = '/')
+            .catch(err => console.error('Logout failed:', err));
+    }
+    
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('已复制到剪贴板');
+        }).catch(err => {
+            console.error('复制失败:', err);
+        });
+    }
+    </script>
 </head>
 <body>
     <div class="header">
@@ -425,8 +435,8 @@
         <div class="nav">
             <a href="/admin/">仪表盘</a>
             <a href="/admin/products">商品管理</a>
-            <a href="/admin/orders" class="active">订单管理</a>
-            <a href="/admin/users">用户管理</a>
+            <a href="/admin/orders">订单管理</a>
+            <a href="/admin/users" class="active">用户管理</a>
             <a href="/admin/recharge-cards">充值卡管理</a>
             <a href="/admin/broadcast">消息推送</a>
             <a href="/admin/faq">FAQ管理</a>
@@ -434,44 +444,53 @@
             <a href="/admin/settings">系统设置</a>
         </div>
         
-        <div class="page-title">订单管理</div>
-        
-        <div class="filters">
-            <form method="get" action="">
-                <div class="form-group">
-                    <label>订单状态</label>
-                    <select name="status">
-                        <option value="">全部</option>
-                        <option value="pending" {{if eq .status "pending"}}selected{{end}}>待支付</option>
-                        <option value="paid" {{if eq .status "paid"}}selected{{end}}>已支付</option>
-                        <option value="delivered" {{if eq .status "delivered"}}selected{{end}}>已发货</option>
-                        <option value="paid_no_stock" {{if eq .status "paid_no_stock"}}selected{{end}}>缺货</option>
-                        <option value="failed_delivery" {{if eq .status "failed_delivery"}}selected{{end}}>发货失败</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>开始日期</label>
-                    <input type="date" name="start_date" value="{{.start_date}}">
-                </div>
-                <div class="form-group">
-                    <label>结束日期</label>
-                    <input type="date" name="end_date" value="{{.end_date}}">
-                </div>
-                <button type="submit" class="btn">筛选</button>
-            </form>
+        <div class="breadcrumb">
+            <a href="/admin/users">用户管理</a> / {{.user.Username}}
         </div>
+        
+        <div class="user-info-card">
+            <div class="user-header">
+                <div class="user-basic">
+                    <h1 class="user-name">{{.user.Username}}</h1>
+                    <div class="user-id">用户ID: {{.user.ID}} | Telegram ID: {{.user.TgUserID}}</div>
+                </div>
+                <div class="balance-section">
+                    <div class="balance-label">账户余额</div>
+                    <div class="balance-value">{{.currency}}{{printf "%.2f" (divf .user.BalanceCents 100)}}</div>
+                </div>
+            </div>
+            
+            <div class="user-details">
+                <div class="detail-item">
+                    <div class="detail-label">注册时间</div>
+                    <div class="detail-value">{{.user.CreatedAt.Format "2006-01-02 15:04:05"}}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">最后活跃</div>
+                    <div class="detail-value">{{.user.UpdatedAt.Format "2006-01-02 15:04:05"}}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">订单总数</div>
+                    <div class="detail-value">{{.orderCount}}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">消费总额</div>
+                    <div class="detail-value">{{.currency}}{{printf "%.2f" (divf .totalSpent 100)}}</div>
+                </div>
+            </div>
+        </div>
+        
+        <h2 class="section-title">订单记录</h2>
         
         <div class="table-container">
             <table>
                 <thead>
                     <tr>
                         <th>订单号</th>
-                        <th>用户</th>
                         <th>商品</th>
                         <th>金额</th>
                         <th>状态</th>
                         <th>卡密</th>
-                        <th>支付单号</th>
                         <th>创建时间</th>
                         <th>支付时间</th>
                     </tr>
@@ -480,14 +499,8 @@
                     {{range .orders}}
                     <tr>
                         <td><span class="order-id">#{{.ID}}</span></td>
-                        <td>
-                            <div class="user-info">
-                                <span class="user-name">{{.User.Username}}</span>
-                                <span class="user-id">ID: {{.User.TgUserID}}</span>
-                            </div>
-                        </td>
                         <td>{{if .Product}}{{.Product.Name}}{{else}}余额充值{{end}}</td>
-                        <td class="amount">{{currency}}{{printf "%.2f" (divf .AmountCents 100)}}</td>
+                        <td class="amount">{{$.currency}}{{printf "%.2f" (divf .AmountCents 100)}}</td>
                         <td>
                             {{if eq .Status "pending"}}
                                 <span class="status pending">待支付</span>
@@ -499,6 +512,8 @@
                                 <span class="status paid_no_stock">缺货</span>
                             {{else if eq .Status "failed_delivery"}}
                                 <span class="status failed_delivery">发货失败</span>
+                            {{else if eq .Status "expired"}}
+                                <span class="status expired">已过期</span>
                             {{else}}
                                 <span class="status">{{.Status}}</span>
                             {{end}}
@@ -511,13 +526,6 @@
                                 -
                             {{end}}
                         </td>
-                        <td>
-                            {{if .EpayOutTradeNo}}
-                                <span class="trade-no" title="{{.EpayOutTradeNo}}">{{.EpayOutTradeNo}}</span>
-                            {{else}}
-                                -
-                            {{end}}
-                        </td>
                         <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
                         <td>{{if .PaidAt}}{{.PaidAt.Format "2006-01-02 15:04"}}{{else}}-{{end}}</td>
                     </tr>
@@ -525,52 +533,7 @@
                 </tbody>
             </table>
         </div>
-        
-        <div class="pagination">
-            {{$page := .page}}
-            {{$totalPages := divf .total .limit | addf 0.999 | int}}
-            
-            {{if gt $page 1}}
-                <a href="?page={{subf $page 1}}&status={{.status}}&start_date={{.start_date}}&end_date={{.end_date}}">上一页</a>
-            {{end}}
-            
-            {{if gt $totalPages 1}}
-                {{range $i := seq 1 $totalPages}}
-                    {{if and (or (le $i 3) (ge $i (subf $totalPages 2))) (or (and (ge $i (subf $page 2)) (le $i (addf $page 2))) (or (le $page 3) (ge $page (subf $totalPages 2))))}}
-                        {{if eq $i $page}}
-                            <a href="?page={{$i}}&status={{$.status}}&start_date={{$.start_date}}&end_date={{$.end_date}}" class="active">{{$i}}</a>
-                        {{else}}
-                            <a href="?page={{$i}}&status={{$.status}}&start_date={{$.start_date}}&end_date={{$.end_date}}">{{$i}}</a>
-                        {{end}}
-                    {{else if or (eq $i 4) (eq $i (subf $totalPages 3))}}
-                        {{if and (gt $page 5) (lt $page (subf $totalPages 4))}}
-                            <span>...</span>
-                        {{end}}
-                    {{end}}
-                {{end}}
-            {{end}}
-            
-            {{if lt $page $totalPages}}
-                <a href="?page={{addf $page 1}}&status={{.status}}&start_date={{.start_date}}&end_date={{.end_date}}">下一页</a>
-            {{end}}
-        </div>
     </div>
-    
-    <script>
-        function logout() {
-            fetch('/api/logout', { method: 'POST' })
-                .then(() => window.location.href = '/')
-                .catch(err => console.error('Logout failed:', err));
-        }
-        
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                alert('已复制到剪贴板');
-            }).catch(err => {
-                console.error('复制失败:', err);
-            });
-        }
-    </script>
     <script src="/static/theme.js"></script>
     <script>
         function toggleTheme() {

@@ -1,264 +1,691 @@
 <!DOCTYPE html>
-<html>
+<html data-theme="light">
 <head>
-    <title>Recharge Cards - Admin</title>
+    <title>充值卡管理 - 商城机器人管理中心</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="stylesheet" href="/static/theme.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f5f5f5;
+        /* Modern UI Base Styles with Aurora Gradient */
+        * { 
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
-        .container {
-            max-width: 1200px;
+        
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --aurora-gradient: linear-gradient(
+                45deg,
+                rgba(102, 126, 234, 0.1) 0%,
+                rgba(118, 75, 162, 0.1) 25%,
+                rgba(255, 154, 139, 0.1) 50%,
+                rgba(255, 206, 84, 0.1) 75%,
+                rgba(102, 126, 234, 0.1) 100%
+            );
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Aurora Background Animation */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(255, 154, 139, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(255, 206, 84, 0.2) 0%, transparent 50%);
+            animation: aurora 20s ease-in-out infinite;
+            z-index: -1;
+        }
+        
+        @keyframes aurora {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(5deg) scale(1.1); }
+            50% { transform: rotate(-5deg) scale(1); }
+            75% { transform: rotate(3deg) scale(1.05); }
+        }
+        
+        /* Glassmorphism Header */
+        .header {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 8px 32px var(--shadow-color);
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--aurora-gradient);
+            opacity: 0.5;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+        
+        @keyframes shimmer {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+        
+        .header-content {
+            max-width: 1400px;
             margin: 0 auto;
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 70px;
+            position: relative;
+            z-index: 1;
         }
-        h1 {
-            color: #333;
-            margin-bottom: 20px;
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
         }
-        .actions {
-            margin-bottom: 20px;
-        }
-        .generate-form {
-            background-color: #f9f9f9;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-        }
-        .generate-form input, .generate-form select {
-            margin: 5px;
+        
+        /* Glass Navigation */
+        .nav { 
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
             padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px var(--shadow-color);
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
         }
-        .generate-form button {
-            background-color: #4CAF50;
+        
+        .nav::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .nav a { 
+            flex: 0 0 auto;
+            padding: 12px 24px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            text-align: center;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .nav a:hover { 
+            background: var(--glass-bg);
+            color: var(--text-primary);
+        }
+        
+        .nav a.active {
+            background: var(--primary-gradient);
             color: white;
-            padding: 10px 20px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .logout-btn {
+            padding: 10px 24px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 25px;
             cursor: pointer;
-            margin: 5px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
         }
-        .generate-form button:hover {
-            background-color: #45a049;
+        
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
         }
+        
+        .container { 
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+        
+        .page-title {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        .stat-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 0 8px 32px var(--shadow-color);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px var(--shadow-color);
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .generate-form {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 32px;
+            box-shadow: 0 8px 32px var(--shadow-color);
+        }
+        
+        .generate-form h3 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: var(--text-primary);
+        }
+        
+        .generate-form form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            align-items: end;
+        }
+        
+        .generate-form label {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        .generate-form input,
+        .generate-form select {
+            padding: 10px 16px;
+            background: var(--hover-bg);
+            border: 1px solid var(--glass-bg);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .generate-form input:focus,
+        .generate-form select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .generate-form select option {
+            background: #1a1a2e;
+        }
+        
+        .btn {
+            padding: 12px 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            color: #1a1a2e;
+            box-shadow: 0 4px 15px rgba(132, 250, 176, 0.3);
+        }
+        
+        .btn-success:hover {
+            box-shadow: 0 6px 20px rgba(132, 250, 176, 0.4);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+        }
+        
+        .btn-danger:hover {
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+        }
+        
+        .table-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px var(--shadow-color);
+        }
+        
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
         }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
+        
         th {
-            background-color: #f2f2f2;
-            font-weight: bold;
+            background: var(--hover-bg);
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--glass-border);
         }
+        
+        td {
+            padding: 16px;
+            border-bottom: 1px solid var(--hover-bg);
+            color: var(--text-primary);
+        }
+        
         tr:hover {
-            background-color: #f5f5f5;
+            background: rgba(255, 255, 255, 0.02);
         }
-        .code {
-            font-family: monospace;
-            background-color: #f0f0f0;
-            padding: 2px 4px;
-            border-radius: 3px;
-        }
-        .status-used {
-            color: #666;
-            background-color: #f0f0f0;
-            padding: 2px 8px;
-            border-radius: 3px;
-            font-size: 12px;
-        }
-        .status-active {
-            color: #2e7d32;
-            background-color: #e8f5e9;
-            padding: 2px 8px;
-            border-radius: 3px;
-            font-size: 12px;
-        }
-        .status-expired {
-            color: #d32f2f;
-            background-color: #ffebee;
-            padding: 2px 8px;
-            border-radius: 3px;
-            font-size: 12px;
-        }
-        .delete-btn {
-            background-color: #f44336;
-            color: white;
-            padding: 5px 10px;
-            border: none;
-            border-radius: 3px;
+        
+        .code-text {
+            font-family: 'Courier New', monospace;
+            background: var(--hover-bg);
+            padding: 4px 8px;
+            border-radius: 6px;
             cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .code-text:hover {
+            background: var(--glass-bg);
+        }
+        
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
             font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
         }
-        .delete-btn:hover {
-            background-color: #d32f2f;
+        
+        .status-active {
+            background: rgba(132, 250, 176, 0.2);
+            color: #84fab0;
+            border: 1px solid rgba(132, 250, 176, 0.3);
         }
-        .delete-btn:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
+        
+        .status-used {
+            background: rgba(255, 206, 84, 0.2);
+            color: #ffce54;
+            border: 1px solid rgba(255, 206, 84, 0.3);
         }
+        
+        .status-expired {
+            background: rgba(245, 87, 108, 0.2);
+            color: #f5576c;
+            border: 1px solid rgba(245, 87, 108, 0.3);
+        }
+        
         .pagination {
-            margin-top: 20px;
-            text-align: center;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 24px;
         }
-        .pagination a {
-            margin: 0 5px;
-            padding: 8px 12px;
-            background-color: #f0f0f0;
-            color: #333;
+        
+        .pagination a, .pagination span {
+            padding: 8px 16px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
             text-decoration: none;
-            border-radius: 3px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            transition: all 0.3s ease;
         }
+        
         .pagination a:hover {
-            background-color: #e0e0e0;
+            background: var(--glass-bg);
+            color: var(--text-primary);
         }
+        
         .pagination .current {
-            background-color: #2196F3;
-            color: white;
+            background: var(--primary-gradient);
+            color: var(--text-primary);
+            border-color: transparent;
         }
+        
         .download-codes {
             display: none;
-            margin-top: 10px;
-            padding: 10px;
-            background-color: #e8f5e9;
-            border-radius: 5px;
+            margin-top: 24px;
+            padding: 24px;
+            background: rgba(132, 250, 176, 0.1);
+            border-radius: 16px;
+            border: 1px solid rgba(132, 250, 176, 0.2);
         }
+        
+        .download-codes strong {
+            display: block;
+            margin-bottom: 16px;
+            color: #84fab0;
+            font-size: 18px;
+        }
+        
+        .download-codes button {
+            margin-right: 12px;
+            margin-bottom: 12px;
+        }
+        
         .download-codes textarea {
             width: 100%;
             height: 200px;
-            margin-top: 10px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-family: monospace;
+            margin-top: 16px;
+            padding: 16px;
+            background: var(--hover-bg);
+            border: 1px solid var(--glass-bg);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+        }
+        
+        .alert {
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .alert-success {
+            background: rgba(132, 250, 176, 0.2);
+            border: 1px solid rgba(132, 250, 176, 0.3);
+            color: #84fab0;
+        }
+        
+        .alert-danger {
+            background: rgba(245, 87, 108, 0.2);
+            border: 1px solid rgba(245, 87, 108, 0.3);
+            color: #f5576c;
+        }
+        
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 24px;
+            }
+            
+            .generate-form form {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
+    <script>
+    function logout() {
+        fetch('/api/logout', { method: 'POST' })
+            .then(() => window.location.href = '/')
+            .catch(err => console.error('Logout failed:', err));
+    }
+    </script>
 </head>
 <body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">商城机器人管理中心</div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="theme-toggle" onclick="toggleTheme()" title="切换主题 (Ctrl+Shift+T)">
+                    <span class="theme-toggle-icon sun">☀️</span>
+                    <span class="theme-toggle-icon moon">🌙</span>
+                </button>
+                <button class="logout-btn" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+    </div>
+    
     <div class="container">
-        <h1>Recharge Cards Management</h1>
+        <div class="nav">
+            <a href="/admin/">仪表盘</a>
+            <a href="/admin/products">商品管理</a>
+            <a href="/admin/orders">订单管理</a>
+            <a href="/admin/users">用户管理</a>
+            <a href="/admin/recharge-cards" class="active">充值卡管理</a>
+            <a href="/admin/broadcast">消息推送</a>
+            <a href="/admin/faq">FAQ管理</a>
+            <a href="/admin/templates">消息模板</a>
+            <a href="/admin/settings">系统设置</a>
+        </div>
         
-        <div class="generate-form">
-            <h3>Generate New Cards</h3>
-            <form id="generateForm">
-                <label>Prefix: <input type="text" name="prefix" value="RC" maxlength="10" style="width: 100px;"></label>
-                <label>Count: <input type="number" name="count" min="1" max="1000" value="10" style="width: 80px;"></label>
-                <label>Amount: $<input type="number" name="amount" min="1" step="0.01" value="10.00" style="width: 80px;"></label>
-                <label>Expires in: 
-                    <select name="expires_in">
-                        <option value="0">Never</option>
-                        <option value="7">7 days</option>
-                        <option value="30" selected>30 days</option>
-                        <option value="90">90 days</option>
-                        <option value="365">1 year</option>
-                    </select>
-                </label>
-                <button type="submit">Generate Cards</button>
-            </form>
-            
-            <div id="downloadCodes" class="download-codes">
-                <strong>Generated Codes:</strong>
-                <button onclick="copyToClipboard()">Copy All</button>
-                <button onclick="downloadTxt()">Download TXT</button>
-                <textarea id="codesList" readonly></textarea>
+        <div class="page-header">
+            <h1 class="page-title">充值卡管理</h1>
+            <a href="/admin/download-template" class="btn btn-success">下载上传模板</a>
+        </div>
+        
+        {{if .error}}
+        <div class="alert alert-danger">{{.error}}</div>
+        {{end}}
+        
+        {{if .success}}
+        <div class="alert alert-success">{{.success}}</div>
+        {{end}}
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-label">总充值卡数</div>
+                <div class="stat-value">{{.totalCount}}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">可用充值卡</div>
+                <div class="stat-value">{{.active}}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">已用完</div>
+                <div class="stat-value">{{.fullyUsed}}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">已过期</div>
+                <div class="stat-value">{{.expired}}</div>
             </div>
         </div>
         
-        <div>
-            <strong>Total Cards:</strong> {{.total}} | 
-            <strong>Page:</strong> {{.currentPage}} / {{.totalPages}}
+        <div class="generate-form">
+            <h3>生成新充值卡</h3>
+            <form id="generateForm">
+                <label>前缀: <input type="text" name="prefix" value="RC" maxlength="10" style="width: 100px;"></label>
+                <label>数量: <input type="number" name="count" min="1" max="1000" value="10" style="width: 80px;"></label>
+                <label>金额: {{currency}}<input type="number" name="amount" min="1" step="0.01" value="10.00" style="width: 80px;"></label>
+                <label>总使用次数: <input type="number" name="max_uses" min="1" max="999999" value="1" style="width: 80px;"></label>
+                <label>单用户限制: <input type="number" name="max_uses_per_user" min="1" max="999999" value="1" style="width: 80px;"></label>
+                <label>有效期: 
+                    <select name="expires_in">
+                        <option value="86400">1天</option>
+                        <option value="259200">3天</option>
+                        <option value="604800" selected>7天</option>
+                        <option value="2592000">30天</option>
+                        <option value="7776000">90天</option>
+                        <option value="31536000">365天</option>
+                    </select>
+                </label>
+                <button type="submit" class="btn">生成充值卡</button>
+            </form>
         </div>
         
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Code</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                    <th>Used By</th>
-                    <th>Used At</th>
-                    <th>Expires At</th>
-                    <th>Created At</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {{range .cards}}
-                <tr>
-                    <td>{{.ID}}</td>
-                    <td><span class="code">{{.Code}}</span></td>
-                    <td>${{divf .AmountCents 100}}</td>
-                    <td>
-                        {{if .IsUsed}}
-                            <span class="status-used">Used</span>
-                        {{else if and .ExpiresAt (lt .ExpiresAt.Unix $.now)}}
-                            <span class="status-expired">Expired</span>
-                        {{else}}
-                            <span class="status-active">Active</span>
-                        {{end}}
-                    </td>
-                    <td>
-                        {{if .User}}
-                            {{.User.Username}} ({{.User.TgUserID}})
-                        {{else}}
-                            -
-                        {{end}}
-                    </td>
-                    <td>{{if .UsedAt}}{{.UsedAt.Format "2006-01-02 15:04"}}{{else}}-{{end}}</td>
-                    <td>{{if .ExpiresAt}}{{.ExpiresAt.Format "2006-01-02"}}{{else}}Never{{end}}</td>
-                    <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
-                    <td>
-                        <button class="delete-btn" onclick="deleteCard({{.ID}})" {{if .IsUsed}}disabled{{end}}>
-                            Delete
-                        </button>
-                    </td>
-                </tr>
-                {{end}}
-            </tbody>
-        </table>
+        <div class="generate-form">
+            <h3>批量导入充值卡</h3>
+            <form id="uploadForm" method="post" action="/admin/recharge-cards/upload" enctype="multipart/form-data">
+                <label>选择文件: <input type="file" name="file" accept=".txt,.csv" required></label>
+                <button type="submit" class="btn btn-success">上传充值卡</button>
+            </form>
+            <div style="margin-top: 16px; color: var(--text-secondary); font-size: 14px; grid-column: 1 / -1;">
+                文件格式：每行一个充值码，格式为 "充值码,金额,总使用次数,单用户限制"
+            </div>
+        </div>
+        
+        <div class="download-codes" id="downloadCodes">
+            <strong>充值卡生成成功！</strong>
+            <button class="btn btn-success" onclick="downloadTxt()">下载TXT文件</button>
+            <button class="btn btn-success" onclick="downloadCsv()">下载CSV文件</button>
+            <button class="btn" onclick="copyAllCodes()">复制所有充值码</button>
+            <textarea id="codesTextarea" readonly></textarea>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>充值码</th>
+                        <th>金额</th>
+                        <th>使用次数</th>
+                        <th>状态</th>
+                        <th>过期时间</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .cards}}
+                    <tr>
+                        <td>
+                            <span class="code-text" onclick="copyCode('{{.Code}}')" title="点击复制">{{.Code}}</span>
+                        </td>
+                        <td>{{$.currency}}{{printf "%.2f" (divf .AmountCents 100)}}</td>
+                        <td>{{.UsedCount}}/{{.MaxUses}}</td>
+                        <td>
+                            {{if eq .Status "active"}}
+                                <span class="status-badge status-active">可用</span>
+                            {{else if eq .Status "fully_used"}}
+                                <span class="status-badge status-used">已用完</span>
+                            {{else if eq .Status "expired"}}
+                                <span class="status-badge status-expired">已过期</span>
+                            {{end}}
+                        </td>
+                        <td>{{.ExpiresAt.Format "2006-01-02 15:04"}}</td>
+                        <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+                        <td>
+                            {{if eq .Status "active"}}
+                                <button class="btn btn-danger" style="padding: 6px 16px; font-size: 12px;" onclick="deleteCard({{.ID}})">删除</button>
+                            {{end}}
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
         
         <div class="pagination">
-            {{if gt .currentPage 1}}
-                <a href="?page={{subf .currentPage 1}}">Previous</a>
-            {{end}}
-            
-            {{range seq 1 .totalPages}}
-                {{if eq . $.currentPage}}
-                    <span class="current">{{.}}</span>
-                {{else}}
-                    <a href="?page={{.}}">{{.}}</a>
+            {{if gt .totalPages 1}}
+                {{if gt .page 1}}
+                    <a href="?page={{subf .page 1}}">上一页</a>
                 {{end}}
-            {{end}}
-            
-            {{if lt .currentPage .totalPages}}
-                <a href="?page={{addf .currentPage 1}}">Next</a>
+                
+                {{range $i := seq 1 .totalPages}}
+                    {{if eq $i $.page}}
+                        <span class="current">{{$i}}</span>
+                    {{else}}
+                        <a href="?page={{$i}}">{{$i}}</a>
+                    {{end}}
+                {{end}}
+                
+                {{if lt .page .totalPages}}
+                    <a href="?page={{addf .page 1}}">下一页</a>
+                {{end}}
             {{end}}
         </div>
     </div>
     
     <script>
-        const authToken = localStorage.getItem('adminToken') || '';
+        let generatedCodes = [];
         
-        document.getElementById('generateForm').addEventListener('submit', async (e) => {
+        document.getElementById('generateForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const formData = new FormData(e.target);
-            const amount = parseFloat(formData.get('amount'));
+            const formData = new FormData(this);
             const data = {
                 prefix: formData.get('prefix'),
                 count: parseInt(formData.get('count')),
-                amount_cents: Math.round(amount * 100),
+                amount_cents: Math.round(parseFloat(formData.get('amount')) * 100),
+                max_uses: parseInt(formData.get('max_uses')),
+                max_uses_per_user: parseInt(formData.get('max_uses_per_user')),
                 expires_in: parseInt(formData.get('expires_in'))
             };
             
@@ -266,8 +693,7 @@
                 const response = await fetch('/admin/recharge-cards/generate', {
                     method: 'POST',
                     headers: {
-                        'Authorization': 'Bearer ' + authToken,
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
                     },
                     body: JSON.stringify(data)
                 });
@@ -275,62 +701,114 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    alert(result.message);
-                    if (result.codes) {
-                        document.getElementById('codesList').value = result.codes.join('\n');
-                        document.getElementById('downloadCodes').style.display = 'block';
-                    }
-                    setTimeout(() => location.reload(), 1000);
+                    generatedCodes = result.codes;
+                    showDownloadSection();
+                    alert('成功生成 ' + result.codes.length + ' 个充值卡！');
                 } else {
-                    alert('Error: ' + result.error);
+                    alert('生成失败: ' + result.error);
                 }
             } catch (error) {
-                alert('Error: ' + error.message);
+                alert('生成失败: ' + error.message);
             }
         });
         
+        function showDownloadSection() {
+            const downloadSection = document.getElementById('downloadCodes');
+            const textarea = document.getElementById('codesTextarea');
+            
+            let codesText = '';
+            generatedCodes.forEach(card => {
+                codesText += `${card.code} - 金额: {{currency}}${(card.amount_cents / 100).toFixed(2)} - 最大使用次数: ${card.max_uses}\n`;
+            });
+            
+            textarea.value = codesText;
+            downloadSection.style.display = 'block';
+        }
+        
+        function downloadTxt() {
+            let content = '充值卡列表\n';
+            content += '生成时间: ' + new Date().toLocaleString() + '\n\n';
+            
+            generatedCodes.forEach(card => {
+                content += `充值码: ${card.code}\n`;
+                content += `金额: {{currency}}${(card.amount_cents / 100).toFixed(2)}\n`;
+                content += `最大使用次数: ${card.max_uses}\n`;
+                content += `单用户限制: ${card.max_uses_per_user}\n`;
+                content += `过期时间: ${new Date(card.expires_at).toLocaleString()}\n`;
+                content += '-'.repeat(50) + '\n\n';
+            });
+            
+            downloadFile(content, 'recharge_cards_' + Date.now() + '.txt', 'text/plain');
+        }
+        
+        function downloadCsv() {
+            let content = '充值码,金额,最大使用次数,单用户限制,过期时间\n';
+            
+            generatedCodes.forEach(card => {
+                content += `${card.code},${(card.amount_cents / 100).toFixed(2)},${card.max_uses},${card.max_uses_per_user},${new Date(card.expires_at).toLocaleString()}\n`;
+            });
+            
+            downloadFile(content, 'recharge_cards_' + Date.now() + '.csv', 'text/csv');
+        }
+        
+        function downloadFile(content, filename, contentType) {
+            const blob = new Blob([content], { type: contentType });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+        
+        function copyCode(code) {
+            navigator.clipboard.writeText(code).then(() => {
+                alert('充值码已复制: ' + code);
+            }).catch(err => {
+                console.error('复制失败:', err);
+            });
+        }
+        
+        function copyAllCodes() {
+            const codes = generatedCodes.map(card => card.code).join('\n');
+            navigator.clipboard.writeText(codes).then(() => {
+                alert('所有充值码已复制到剪贴板');
+            }).catch(err => {
+                console.error('复制失败:', err);
+            });
+        }
+        
         async function deleteCard(id) {
-            if (!confirm('Are you sure you want to delete this card?')) {
+            if (!confirm('确定要删除这个充值卡吗？')) {
                 return;
             }
             
             try {
-                const response = await fetch('/admin/recharge-cards/' + id, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': 'Bearer ' + authToken
-                    }
+                const response = await fetch(`/admin/recharge-cards/${id}`, {
+                    method: 'DELETE'
                 });
                 
                 const result = await response.json();
                 
                 if (response.ok) {
-                    alert(result.message);
-                    location.reload();
+                    alert('删除成功');
+                    window.location.reload();
                 } else {
-                    alert('Error: ' + result.error);
+                    alert('删除失败: ' + result.error);
                 }
             } catch (error) {
-                alert('Error: ' + error.message);
+                alert('删除失败: ' + error.message);
             }
         }
-        
-        function copyToClipboard() {
-            const textarea = document.getElementById('codesList');
-            textarea.select();
-            document.execCommand('copy');
-            alert('Codes copied to clipboard!');
-        }
-        
-        function downloadTxt() {
-            const codes = document.getElementById('codesList').value;
-            const blob = new Blob([codes], { type: 'text/plain' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'recharge_cards_' + new Date().getTime() + '.txt';
-            a.click();
-            window.URL.revokeObjectURL(url);
+    </script>
+    <script src="/static/theme.js"></script>
+    <script>
+        function toggleTheme() {
+            if (window.themeManager) {
+                window.themeManager.toggleTheme();
+            }
         }
     </script>
 </body>

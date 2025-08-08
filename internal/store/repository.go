@@ -7,6 +7,7 @@ import (
 	"time"
 	
 	"gorm.io/gorm"
+	"shop-bot/internal/config"
 )
 
 var (
@@ -143,12 +144,16 @@ func GetOrCreateUser(db *gorm.DB, tgUserID int64, username string) (*User, error
 
 // CreateOrder creates a new order
 func CreateOrder(db *gorm.DB, userID, productID uint, amountCents int) (*Order, error) {
+	// Generate unique out_trade_no at creation time
+	tempID := fmt.Sprintf("%d-%d-%d", userID, productID, time.Now().UnixNano())
+	
 	order := &Order{
-		UserID:        userID,
-		ProductID:     productID,
-		AmountCents:   amountCents,
-		PaymentAmount: amountCents, // Initially same as amount, will be updated if balance is used
-		Status:        "pending",
+		UserID:         userID,
+		ProductID:      &productID,
+		AmountCents:    amountCents,
+		PaymentAmount:  amountCents, // Initially same as amount, will be updated if balance is used
+		Status:         "pending",
+		EpayOutTradeNo: tempID, // Temporary unique ID, will be updated when payment is initiated
 	}
 	
 	if err := db.Create(order).Error; err != nil {
@@ -184,13 +189,17 @@ func CreateOrderWithBalance(db *gorm.DB, userID, productID uint, amountCents int
 		}
 		
 		// Create order
+		// Generate unique out_trade_no at creation time
+		tempID := fmt.Sprintf("%d-%d-%d", userID, productID, time.Now().UnixNano())
+		
 		order = &Order{
-			UserID:        userID,
-			ProductID:     productID,
-			AmountCents:   amountCents,
-			BalanceUsed:   balanceUsed,
-			PaymentAmount: paymentAmount,
-			Status:        "pending",
+			UserID:         userID,
+			ProductID:      &productID,
+			AmountCents:    amountCents,
+			BalanceUsed:    balanceUsed,
+			PaymentAmount:  paymentAmount,
+			Status:         "pending",
+			EpayOutTradeNo: tempID, // Temporary unique ID, will be updated when payment is initiated
 		}
 		
 		if err := tx.Create(order).Error; err != nil {
@@ -223,4 +232,106 @@ func CreateOrderWithBalance(db *gorm.DB, userID, productID uint, amountCents int
 	}
 	
 	return order, nil
+}
+
+// CreateDepositOrder creates a deposit order (no product)
+func CreateDepositOrder(db *gorm.DB, userID uint, amountCents int) (*Order, error) {
+	// Generate unique out_trade_no at creation time
+	tempID := fmt.Sprintf("DEPOSIT-%d-%d", userID, time.Now().UnixNano())
+	
+	order := &Order{
+		UserID:         userID,
+		ProductID:      nil, // No product for deposit orders
+		AmountCents:    amountCents,
+		PaymentAmount:  amountCents,
+		BalanceUsed:    0,
+		Status:         "pending",
+		EpayOutTradeNo: tempID, // Temporary unique ID, will be updated when payment is initiated
+	}
+	
+	if err := db.Create(order).Error; err != nil {
+		return nil, err
+	}
+	
+	// Load associations
+	if err := db.Preload("User").First(order, order.ID).Error; err != nil {
+		return nil, err
+	}
+	
+	return order, nil
+}
+
+// GetSystemSetting retrieves a system setting by key
+func GetSystemSetting(db *gorm.DB, key string) (string, error) {
+	var setting SystemSetting
+	err := db.Where("key = ?", key).First(&setting).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return "", nil
+		}
+		return "", err
+	}
+	return setting.Value, nil
+}
+
+// SetSystemSetting sets a system setting value
+func SetSystemSetting(db *gorm.DB, key, value string) error {
+	var setting SystemSetting
+	err := db.Where("key = ?", key).First(&setting).Error
+	
+	if err == gorm.ErrRecordNotFound {
+		// Create new setting
+		setting = SystemSetting{
+			Key:   key,
+			Value: value,
+		}
+		return db.Create(&setting).Error
+	}
+	
+	if err != nil {
+		return err
+	}
+	
+	// Update existing setting
+	return db.Model(&setting).Update("value", value).Error
+}
+
+// GetCurrencySettings retrieves currency settings from database or config
+func GetCurrencySettings(db *gorm.DB, config *config.Config) (currency string, symbol string) {
+	// Try to get from database first
+	if db != nil {
+		if curr, err := GetSystemSetting(db, "currency"); err == nil && curr != "" {
+			currency = curr
+		}
+		if sym, err := GetSystemSetting(db, "currency_symbol"); err == nil && sym != "" {
+			symbol = sym
+		}
+	}
+	
+	// Fall back to config if not in database
+	if currency == "" && config != nil {
+		currency = config.Currency
+	}
+	if symbol == "" && config != nil {
+		symbol = config.CurrencySymbol
+	}
+	
+	// Default values
+	if currency == "" {
+		currency = "CNY"
+	}
+	if symbol == "" {
+		symbol = "¥"
+	}
+	
+	return currency, symbol
+}
+
+// GetActiveFAQs returns all active FAQs for a given language
+func GetActiveFAQs(db *gorm.DB, language string) ([]FAQ, error) {
+	var faqs []FAQ
+	err := db.Where("language = ? AND is_active = ?", language, true).
+		Order("sort_order ASC, id ASC").
+		Find(&faqs).Error
+	return faqs, err
 }

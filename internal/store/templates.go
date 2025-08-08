@@ -2,9 +2,7 @@ package store
 
 import (
 	"bytes"
-	"encoding/json"
 	"html/template"
-	"strings"
 	
 	"gorm.io/gorm"
 )
@@ -86,16 +84,16 @@ func CreateDefaultTemplates(db *gorm.DB) error {
 			Code:     "balance_recharged",
 			Language: "en",
 			Name:     "Balance Recharged Message",
-			Content:  "💰 Balance recharged successfully!\n\nAmount: ${{.Amount}}\nNew Balance: ${{.NewBalance}}\nCard: {{.CardCode}}",
-			Variables: `["Amount", "NewBalance", "CardCode"]`,
+			Content:  "💰 Balance recharged successfully!\n\nAmount: {{.Currency}}{{.Amount}}\nNew Balance: {{.Currency}}{{.NewBalance}}\nCard: {{.CardCode}}",
+			Variables: `["Currency", "Amount", "NewBalance", "CardCode"]`,
 			IsActive: true,
 		},
 		{
 			Code:     "balance_recharged",
 			Language: "zh",
 			Name:     "余额充值成功消息",
-			Content:  "💰 余额充值成功！\n\n充值金额：${{.Amount}}\n当前余额：${{.NewBalance}}\n充值卡：{{.CardCode}}",
-			Variables: `["Amount", "NewBalance", "CardCode"]`,
+			Content:  "💰 余额充值成功！\n\n充值金额：{{.Currency}}{{.Amount}}\n当前余额：{{.Currency}}{{.NewBalance}}\n充值卡：{{.CardCode}}",
+			Variables: `["Currency", "Amount", "NewBalance", "CardCode"]`,
 			IsActive: true,
 		},
 	}
@@ -160,7 +158,7 @@ func GetTemplateVariables(code string) []string {
 	varMap := map[string][]string{
 		"order_paid": {"OrderID", "ProductName", "Code"},
 		"no_stock": {"OrderID", "ProductName"},
-		"balance_recharged": {"Amount", "NewBalance", "CardCode"},
+		"balance_recharged": {"Currency", "Amount", "NewBalance", "CardCode"},
 		"order_created": {"ProductName", "Price", "OrderID"},
 		"profile_info": {"UserID", "Username", "Language", "JoinedDate", "Balance"},
 	}

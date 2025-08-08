@@ -46,12 +46,15 @@ func AutoMigrate(db *gorm.DB) error {
 		&Code{},
 		&Order{},
 		&RechargeCard{},
+		&RechargeCardUsage{},
 		&BalanceTransaction{},
 		&MessageTemplate{},
 		&Group{},
 		&GroupAdmin{},
 		&BroadcastMessage{},
 		&BroadcastLog{},
+		&SystemSetting{},
+		&FAQ{},
 	)
 }
 

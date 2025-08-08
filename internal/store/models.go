@@ -2,7 +2,6 @@ package store
 
 import (
 	"time"
-	"gorm.io/gorm"
 )
 
 // User represents a Telegram user
@@ -17,12 +16,13 @@ type User struct {
 
 // Product represents a sellable item
 type Product struct {
-	ID         uint      `gorm:"primaryKey"`
-	Name       string    `gorm:"size:200;not null"`
-	PriceCents int       `gorm:"not null"` // Price in cents to avoid float precision issues
-	IsActive   bool      `gorm:"default:true;index"`
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	ID          uint      `gorm:"primaryKey" json:"id"`
+	Name        string    `gorm:"size:200;not null" json:"name"`
+	Description string    `gorm:"type:text" json:"description"`
+	PriceCents  int       `gorm:"not null" json:"price_cents"` // Price in cents to avoid float precision issues
+	IsActive    bool      `gorm:"default:true;index" json:"is_active"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 // Code represents a card/account code
@@ -43,18 +43,20 @@ type Order struct {
 	ID              uint      `gorm:"primaryKey"`
 	UserID          uint      `gorm:"not null;index"`
 	User            User      `gorm:"foreignKey:UserID"`
-	ProductID       uint      `gorm:"not null;index"`
-	Product         Product   `gorm:"foreignKey:ProductID"`
+	ProductID       *uint     `gorm:"index"` // Nullable for deposit orders
+	Product         *Product  `gorm:"foreignKey:ProductID"`
 	AmountCents     int       `gorm:"not null"`
 	BalanceUsed     int       `gorm:"default:0;not null"` // Balance used for this order
 	PaymentAmount   int       `gorm:"not null"` // Actual payment amount (after balance deduction)
-	Status          string    `gorm:"size:20;not null;default:'pending';index"` // pending, paid, delivered, paid_no_stock, failed_delivery
+	Status          string    `gorm:"size:20;not null;default:'pending';index"` // pending, paid, delivered, paid_no_stock, failed_delivery, expired
 	EpayTradeNo     string    `gorm:"size:100;index"`
 	EpayOutTradeNo  string    `gorm:"size:100;uniqueIndex"`
 	DeliveryRetries int       `gorm:"default:0;not null"` // Number of delivery retry attempts
 	LastRetryAt     *time.Time
 	CreatedAt       time.Time
 	PaidAt          *time.Time
+	DeliveredAt     *time.Time
+	Code            *Code     `gorm:"-"` // Virtual field for displaying code in admin
 }
 
 // RechargeCard represents a recharge card for balance top-up
@@ -62,12 +64,28 @@ type RechargeCard struct {
 	ID           uint      `gorm:"primaryKey"`
 	Code         string    `gorm:"uniqueIndex;not null"`
 	AmountCents  int       `gorm:"not null"` // Amount in cents
-	IsUsed       bool      `gorm:"default:false;index"`
-	UsedByUserID *uint
-	UsedBy       *User     `gorm:"foreignKey:UsedByUserID"`
-	UsedAt       *time.Time
+	MaxUses      int       `gorm:"default:1;not null"` // Maximum total uses
+	UsedCount    int       `gorm:"default:0;not null"` // Current used count
+	MaxUsesPerUser int     `gorm:"default:1;not null"` // Maximum uses per user
+	IsUsed       bool      `gorm:"default:false;index"` // Deprecated, kept for compatibility
+	UsedByUserID *uint     // Deprecated, kept for compatibility
+	UsedBy       *User     `gorm:"foreignKey:UsedByUserID"` // Deprecated
+	UsedAt       *time.Time // Deprecated
 	CreatedAt    time.Time
 	ExpiresAt    *time.Time `gorm:"index"`
+}
+
+// RechargeCardUsage represents a recharge card usage record
+type RechargeCardUsage struct {
+	ID             uint         `gorm:"primaryKey"`
+	RechargeCardID uint         `gorm:"not null;index:idx_card_user,unique"`
+	RechargeCard   RechargeCard `gorm:"foreignKey:RechargeCardID"`
+	UserID         uint         `gorm:"not null;index:idx_card_user,unique"`
+	User           User         `gorm:"foreignKey:UserID"`
+	UseCount       int          `gorm:"default:1;not null"` // How many times this user has used this card
+	LastUsedAt     time.Time
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 // BalanceTransaction represents a balance transaction
@@ -89,8 +107,8 @@ type BalanceTransaction struct {
 // MessageTemplate represents customizable message templates
 type MessageTemplate struct {
 	ID        uint      `gorm:"primaryKey"`
-	Code      string    `gorm:"uniqueIndex;not null;size:50"` // Template code (e.g., "order_paid", "no_stock")
-	Language  string    `gorm:"size:10;not null;default:'en'"`
+	Code      string    `gorm:"size:50;not null;uniqueIndex:idx_code_lang"` // Template code with composite index
+	Language  string    `gorm:"size:10;not null;default:'en';uniqueIndex:idx_code_lang"`
 	Name      string    `gorm:"size:100;not null"` // Human-readable name
 	Content   string    `gorm:"type:text;not null"` // Template content with {{variables}}
 	Variables string    `gorm:"size:500"` // JSON array of available variables
@@ -105,8 +123,10 @@ func (Product) TableName() string { return "products" }
 func (Code) TableName() string { return "codes" }
 func (Order) TableName() string { return "orders" }
 func (RechargeCard) TableName() string { return "recharge_cards" }
+func (RechargeCardUsage) TableName() string { return "recharge_card_usages" }
 func (BalanceTransaction) TableName() string { return "balance_transactions" }
 func (MessageTemplate) TableName() string { return "message_templates" }
+func (SystemSetting) TableName() string { return "system_settings" }
 
 // Group represents a Telegram group or channel
 type Group struct {
@@ -165,7 +185,32 @@ type BroadcastLog struct {
 	CreatedAt        time.Time
 }
 
+// SystemSetting represents system-wide settings
+type SystemSetting struct {
+	ID          uint      `gorm:"primaryKey"`
+	Key         string    `gorm:"uniqueIndex;not null;size:100"`
+	Value       string    `gorm:"type:text"`
+	Description string    `gorm:"size:500"`
+	Type        string    `gorm:"size:50;default:'string'"` // string, int, bool, json
+	UpdatedAt   time.Time
+	CreatedAt   time.Time
+}
+
 func (Group) TableName() string { return "groups" }
 func (GroupAdmin) TableName() string { return "group_admins" }
 func (BroadcastMessage) TableName() string { return "broadcast_messages" }
 func (BroadcastLog) TableName() string { return "broadcast_logs" }
+
+// FAQ represents a frequently asked question
+type FAQ struct {
+	ID        uint      `gorm:"primaryKey"`
+	Question  string    `gorm:"size:500;not null"`
+	Answer    string    `gorm:"type:text;not null"`
+	Language  string    `gorm:"size:10;not null;default:'zh'"`
+	SortOrder int       `gorm:"default:0"`
+	IsActive  bool      `gorm:"default:true"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func (FAQ) TableName() string { return "faqs" }

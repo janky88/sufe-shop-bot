@@ -1,0 +1,296 @@
+/* Theme System for Shop Bot Admin Interface */
+
+/* Theme Variables */
+:root {
+    /* Light theme colors */
+    --light-bg-primary: #ffffff;
+    --light-bg-secondary: #f5f7fa;
+    --light-bg-tertiary: #e9ecef;
+    --light-text-primary: #1a1a2e;
+    --light-text-secondary: #4a4a6a;
+    --light-text-tertiary: #6c757d;
+    --light-border: #dee2e6;
+    --light-shadow: rgba(0, 0, 0, 0.1);
+    --light-glass-bg: rgba(255, 255, 255, 0.8);
+    --light-glass-border: rgba(0, 0, 0, 0.1);
+    --light-hover-bg: rgba(0, 0, 0, 0.05);
+    
+    /* Dark theme colors (softer, not pure black) */
+    --dark-bg-primary: #1a1a2e;
+    --dark-bg-secondary: #16213e;
+    --dark-bg-tertiary: #0f3460;
+    --dark-text-primary: #e9ecef;
+    --dark-text-secondary: #adb5bd;
+    --dark-text-tertiary: #6c757d;
+    --dark-border: #2d3561;
+    --dark-shadow: rgba(0, 0, 0, 0.3);
+    --dark-glass-bg: rgba(255, 255, 255, 0.1);
+    --dark-glass-border: rgba(255, 255, 255, 0.2);
+    --dark-hover-bg: rgba(255, 255, 255, 0.05);
+    
+    /* Common colors (same for both themes) */
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    --danger-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    --info-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    
+    /* Aurora gradient (adjusted for themes) */
+    --aurora-gradient: linear-gradient(
+        45deg,
+        rgba(102, 126, 234, 0.1) 0%,
+        rgba(118, 75, 162, 0.1) 25%,
+        rgba(255, 154, 139, 0.1) 50%,
+        rgba(255, 206, 84, 0.1) 75%,
+        rgba(102, 126, 234, 0.1) 100%
+    );
+    
+    /* Default to light theme */
+    --bg-primary: var(--light-bg-primary);
+    --bg-secondary: var(--light-bg-secondary);
+    --bg-tertiary: var(--light-bg-tertiary);
+    --text-primary: var(--light-text-primary);
+    --text-secondary: var(--light-text-secondary);
+    --text-tertiary: var(--light-text-tertiary);
+    --border-color: var(--light-border);
+    --shadow-color: var(--light-shadow);
+    --glass-bg: var(--light-glass-bg);
+    --glass-border: var(--light-glass-border);
+    --hover-bg: var(--light-hover-bg);
+    
+    /* Transition for smooth theme switching */
+    --theme-transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+    --bg-primary: var(--dark-bg-primary);
+    --bg-secondary: var(--dark-bg-secondary);
+    --bg-tertiary: var(--dark-bg-tertiary);
+    --text-primary: var(--dark-text-primary);
+    --text-secondary: var(--dark-text-secondary);
+    --text-tertiary: var(--dark-text-tertiary);
+    --border-color: var(--dark-border);
+    --shadow-color: var(--dark-shadow);
+    --glass-bg: var(--dark-glass-bg);
+    --glass-border: var(--dark-glass-border);
+    --hover-bg: var(--dark-hover-bg);
+}
+
+/* Apply theme transitions */
+body,
+.header,
+.nav,
+.glass-card,
+table,
+input,
+select,
+textarea,
+.btn-default {
+    transition: var(--theme-transition);
+}
+
+/* Update body background */
+body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* Update glassmorphism elements */
+.header {
+    background: var(--glass-bg);
+    border-bottom-color: var(--glass-border);
+    box-shadow: 0 8px 32px var(--shadow-color);
+}
+
+.nav {
+    background: var(--glass-bg);
+    border-color: var(--glass-border);
+    box-shadow: 0 8px 32px var(--shadow-color);
+}
+
+.nav a {
+    color: var(--text-secondary);
+}
+
+.nav a:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+}
+
+.glass-card {
+    background: var(--glass-bg);
+    border-color: var(--glass-border);
+    box-shadow: 0 8px 32px var(--shadow-color);
+}
+
+/* Update table styles */
+table {
+    background: var(--glass-bg);
+}
+
+th {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+    border-bottom-color: var(--border-color);
+}
+
+td {
+    border-bottom-color: var(--border-color);
+    color: var(--text-secondary);
+}
+
+tr:hover {
+    background: var(--hover-bg);
+}
+
+/* Update form elements */
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="email"],
+input[type="password"],
+select,
+textarea {
+    background: var(--glass-bg);
+    border-color: var(--glass-border);
+    color: var(--text-primary);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--text-tertiary);
+}
+
+/* Update button styles */
+.btn-default {
+    background: var(--glass-bg);
+    border-color: var(--glass-border);
+    color: var(--text-primary);
+}
+
+.btn-default:hover {
+    background: var(--hover-bg);
+}
+
+/* Theme toggle button styles */
+.theme-toggle {
+    position: relative;
+    width: 60px;
+    height: 30px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-left: 20px;
+}
+
+.theme-toggle::before {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 22px;
+    height: 22px;
+    background: var(--primary-gradient);
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .theme-toggle::before {
+    transform: translateX(30px);
+}
+
+.theme-toggle-icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+    transition: opacity 0.3s ease;
+}
+
+.theme-toggle-icon.sun {
+    left: 6px;
+    color: #ffd700;
+}
+
+.theme-toggle-icon.moon {
+    right: 6px;
+    color: #b8c1ec;
+}
+
+[data-theme="light"] .theme-toggle-icon.moon {
+    opacity: 0.3;
+}
+
+[data-theme="dark"] .theme-toggle-icon.sun {
+    opacity: 0.3;
+}
+
+/* Adjust aurora effect for light theme */
+[data-theme="light"] body::before {
+    opacity: 0.5;
+}
+
+/* Additional theme-specific adjustments */
+[data-theme="light"] .logo {
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-theme="dark"] .logo {
+    background: linear-gradient(135deg, #a8c0ff 0%, #d4a5ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Status colors adjustment for themes */
+[data-theme="light"] .status-success {
+    color: #28a745;
+    background: rgba(40, 167, 69, 0.1);
+}
+
+[data-theme="dark"] .status-success {
+    color: #38ef7d;
+    background: rgba(56, 239, 125, 0.1);
+}
+
+[data-theme="light"] .status-error {
+    color: #dc3545;
+    background: rgba(220, 53, 69, 0.1);
+}
+
+[data-theme="dark"] .status-error {
+    color: #f5576c;
+    background: rgba(245, 87, 108, 0.1);
+}
+
+/* Card content colors */
+.glass-card h2,
+.glass-card h3,
+.page-title {
+    color: var(--text-primary);
+}
+
+.glass-card p,
+.stat-value {
+    color: var(--text-secondary);
+}
+
+/* Navigation active state for themes */
+[data-theme="light"] .nav a.active {
+    background: var(--primary-gradient);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+[data-theme="dark"] .nav a.active {
+    background: var(--primary-gradient);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
+}

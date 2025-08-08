@@ -70,28 +70,36 @@ func GetUserOrderStats(db *gorm.DB, userID uint) (totalOrders, deliveredOrders i
 	return
 }
 
-// SearchUserOrders searches orders by code content
-func SearchUserOrders(db *gorm.DB, userID uint, searchTerm string) ([]Order, error) {
+// GetUserPaidOrders retrieves only paid orders (delivered or deposit) for a specific user with pagination
+func GetUserPaidOrders(db *gorm.DB, userID uint, limit, offset int) ([]Order, error) {
 	var orders []Order
-	
-	// First find codes that match the search term
-	var codeOrderIDs []uint
-	err := db.Model(&Code{}).
-		Select("order_id").
-		Where("code LIKE ? AND order_id IS NOT NULL", "%"+searchTerm+"%").
-		Pluck("order_id", &codeOrderIDs).Error
-	
-	if err != nil {
-		return nil, err
-	}
-	
-	// Then get orders that belong to the user
-	if len(codeOrderIDs) > 0 {
-		err = db.Where("user_id = ? AND id IN ?", userID, codeOrderIDs).
-			Order("created_at DESC").
-			Preload("Product").
-			Find(&orders).Error
-	}
-	
+	err := db.Where("user_id = ? AND status IN (?, ?)", userID, "delivered", "deposit").
+		Order("created_at DESC").
+		Limit(limit).
+		Offset(offset).
+		Preload("Product").
+		Find(&orders).Error
 	return orders, err
+}
+
+// GetUserPaidOrderCount returns total paid order count for a user
+func GetUserPaidOrderCount(db *gorm.DB, userID uint) (int64, error) {
+	var count int64
+	err := db.Model(&Order{}).
+		Where("user_id = ? AND status IN (?, ?)", userID, "delivered", "deposit").
+		Count(&count).Error
+	return count, err
+}
+
+// GetOrderCode retrieves the code associated with an order
+func GetOrderCode(db *gorm.DB, orderID uint) (string, error) {
+	var code Code
+	err := db.Where("order_id = ?", orderID).First(&code).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return "", nil
+		}
+		return "", err
+	}
+	return code.Code, nil
 }

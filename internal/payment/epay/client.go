@@ -50,6 +50,7 @@ func NewClient(pid, key, gateway string) *Client {
 
 // CreateOrderParams contains parameters for creating an order
 type CreateOrderParams struct {
+	Type       PaymentType // Payment type (optional, defaults to showing all available)
 	OutTradeNo string      // Merchant order number
 	Name       string      // Product name (max 127 bytes)
 	Money      float64     // Amount in yuan
@@ -88,7 +89,10 @@ func (c *Client) CreateOrder(params CreateOrderParams) (*CreateOrderResponse, er
 	// Build request parameters
 	values := url.Values{}
 	values.Set("pid", c.PID)
-	// Don't set type - let user choose on payment page
+	// Set type if provided, otherwise show all available payment methods
+	if params.Type != "" {
+		values.Set("type", string(params.Type))
+	}
 	values.Set("out_trade_no", params.OutTradeNo)
 	values.Set("notify_url", params.NotifyURL)
 	values.Set("return_url", params.ReturnURL)
@@ -156,7 +160,10 @@ func (c *Client) CreateSubmitURL(params CreateOrderParams) string {
 	// Build parameters
 	values := url.Values{}
 	values.Set("pid", c.PID)
-	// Don't set type - let user choose on payment page
+	// Set type if provided, otherwise show all available payment methods
+	if params.Type != "" {
+		values.Set("type", string(params.Type))
+	}
 	values.Set("out_trade_no", params.OutTradeNo)
 	values.Set("notify_url", params.NotifyURL)
 	values.Set("return_url", params.ReturnURL)

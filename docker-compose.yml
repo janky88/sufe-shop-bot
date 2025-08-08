@@ -1,47 +1,7 @@
-version: '3.8'
-
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: shopbot-db
-    environment:
-      POSTGRES_DB: shopbot
-      POSTGRES_USER: shopbot
-      POSTGRES_PASSWORD: shopbot_password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - shopbot-net
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U shopbot"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:7-alpine
-    container_name: shopbot-redis
-    command: redis-server --requirepass redis_password
-    volumes:
-      - redis_data:/data
-    networks:
-      - shopbot-net
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   app:
     build: .
     container_name: shopbot-app
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     env_file:
       - .env
     environment:
@@ -51,27 +11,17 @@ services:
       - ./static:/app/static:ro
       - ./logs:/app/logs
     ports:
-      - "7832:7832"
+      - "9147:9147"
     networks:
-      - shopbot-net
+      - 1panel-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:7832/healthz"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9147/healthz"]
       interval: 30s
       timeout: 3s
       retries: 3
       start_period: 40s
 
-volumes:
-  postgres_data:
-    driver: local
-  redis_data:
-    driver: local
-
 networks:
-  shopbot-net:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.20.0.0/16
+  1panel-network:
+    external: true

@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html data-theme="light">
+<head>
+    <title>卡密管理 - {{.product.Name}}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="stylesheet" href="/static/theme.css">
+    <style>
+        /* Modern UI Base Styles with Aurora Gradient */
+        * { 
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --aurora-gradient: linear-gradient(
+                45deg,
+                rgba(102, 126, 234, 0.1) 0%,
+                rgba(118, 75, 162, 0.1) 25%,
+                rgba(255, 154, 139, 0.1) 50%,
+                rgba(255, 206, 84, 0.1) 75%,
+                rgba(102, 126, 234, 0.1) 100%
+            );
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Aurora Background Animation */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(255, 154, 139, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(255, 206, 84, 0.2) 0%, transparent 50%);
+            animation: aurora 20s ease-in-out infinite;
+            z-index: -1;
+        }
+        
+        @keyframes aurora {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(5deg) scale(1.1); }
+            50% { transform: rotate(-5deg) scale(1); }
+            75% { transform: rotate(3deg) scale(1.05); }
+        }
+        
+        /* Glassmorphism Header */
+        .header {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 8px 32px var(--shadow-color);
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--aurora-gradient);
+            opacity: 0.5;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+        
+        @keyframes shimmer {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 70px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 32px;
+        }
+        
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+        
+        .container { 
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        .breadcrumb {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+        
+        .breadcrumb a {
+            color: #667eea;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .breadcrumb a:hover {
+            color: #764ba2;
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+        
+        .page-title {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        .stat-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 0 8px 32px var(--shadow-color);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px var(--shadow-color);
+        }
+        
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .upload-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 32px;
+            box-shadow: 0 8px 32px var(--shadow-color);
+        }
+        
+        .upload-section h3 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: var(--text-primary);
+        }
+        
+        .upload-form {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+        
+        .form-group {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        .form-group input[type="file"] {
+            width: 100%;
+            padding: 10px 16px;
+            background: var(--hover-bg);
+            border: 1px solid var(--glass-bg);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input[type="file"]:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .help-text {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-top: 8px;
+        }
+        
+        .btn {
+            padding: 12px 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            color: #1a1a2e;
+            box-shadow: 0 4px 15px rgba(132, 250, 176, 0.3);
+        }
+        
+        .btn-success:hover {
+            box-shadow: 0 6px 20px rgba(132, 250, 176, 0.4);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+        }
+        
+        .btn-danger:hover {
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+        }
+        
+        .btn-sm {
+            padding: 6px 16px;
+            font-size: 12px;
+        }
+        
+        .table-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px var(--shadow-color);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: var(--hover-bg);
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--glass-border);
+        }
+        
+        td {
+            padding: 16px;
+            border-bottom: 1px solid var(--hover-bg);
+            color: var(--text-primary);
+        }
+        
+        tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        
+        .code-text {
+            font-family: 'Courier New', monospace;
+            background: var(--hover-bg);
+            padding: 4px 8px;
+            border-radius: 6px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-width: 500px;
+            display: inline-block;
+            transition: all 0.3s ease;
+            color: var(--text-primary);
+        }
+        
+        .code-text:hover {
+            background: var(--glass-bg);
+        }
+        
+        .time-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .modal-content {
+            max-width: 500px;
+            margin: 50px auto;
+            background: var(--glass-bg);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--glass-bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: var(--glass-bg);
+            border-radius: 50%;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            line-height: 1;
+        }
+        
+        .close:hover {
+            background: var(--glass-border);
+            color: var(--text-primary);
+        }
+        
+        .modal-body {
+            padding: 24px;
+        }
+        
+        .modal-body textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 12px 16px;
+            background: var(--hover-bg);
+            border: 1px solid var(--glass-bg);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: monospace;
+            font-size: 14px;
+            resize: vertical;
+        }
+        
+        .modal-body textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .modal-footer {
+            padding: 24px;
+            border-top: 1px solid var(--glass-bg);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        
+        .alert {
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .alert-success {
+            background: rgba(132, 250, 176, 0.2);
+            border: 1px solid rgba(132, 250, 176, 0.3);
+            color: #84fab0;
+        }
+        
+        .alert-danger {
+            background: rgba(245, 87, 108, 0.2);
+            border: 1px solid rgba(245, 87, 108, 0.3);
+            color: #f5576c;
+        }
+        
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 24px;
+            }
+            
+            .upload-form {
+                flex-direction: column;
+            }
+            
+            .form-group {
+                min-width: unset;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">商城机器人管理中心</div>
+            <div class="nav-links">
+                <a href="/admin/">仪表盘</a>
+                <a href="/admin/products">商品管理</a>
+                <a href="/admin/orders">订单管理</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="/admin/products">商品管理</a> / {{.product.Name}} / 卡密管理
+        </div>
+        
+        <div class="page-header">
+            <h1 class="page-title">{{.product.Name}} - 卡密管理</h1>
+        </div>
+        
+        {{if .error}}
+        <div class="alert alert-danger">{{.error}}</div>
+        {{end}}
+        
+        {{if .success}}
+        <div class="alert alert-success">{{.success}}</div>
+        {{end}}
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value">{{.total}}</div>
+                <div class="stat-label">总卡密数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{len .codes}}</div>
+                <div class="stat-label">当前页显示</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{.page}}</div>
+                <div class="stat-label">当前页码</div>
+            </div>
+        </div>
+        
+        <div class="upload-section">
+            <h3>批量添加卡密</h3>
+            
+            <!-- Tab buttons -->
+            <div style="display: flex; gap: 16px; margin-bottom: 24px;">
+                <button type="button" class="btn" onclick="showTab('text')" id="textTab" style="background: var(--primary-gradient);">文本输入</button>
+                <button type="button" class="btn" onclick="showTab('file')" id="fileTab" style="background: var(--glass-bg); color: var(--text-primary);">文件上传</button>
+                <a href="/admin/codes/template" class="btn" style="background: var(--glass-bg); color: var(--text-primary); text-decoration: none;">下载模板</a>
+            </div>
+            
+            <!-- Text input form -->
+            <form id="textForm" class="upload-form" onsubmit="submitTextCodes(event)" style="display: block;">
+                <div class="form-group" style="width: 100%;">
+                    <label>直接输入卡密</label>
+                    <textarea name="codes" style="width: 100%; min-height: 200px; padding: 12px 16px; background: var(--hover-bg); border: 1px solid var(--glass-bg); border-radius: 12px; color: var(--text-primary); font-family: monospace; font-size: 14px; resize: vertical;" placeholder="每行一个卡密，支持多行卡密格式：&#10;&#10;单行卡密示例：&#10;ABC123456789&#10;DEF987654321&#10;&#10;多行卡密示例（用空行分隔）：&#10;租户名: elmejorporteroesfran&#10;用户名: elmejorporteroesfran@hotmail.com&#10;密码: mudvoc-nitsa0-Nifjas&#10;&#10;账号: user001&#10;密码: pass123&#10;有效期: 2025-12-31" required></textarea>
+                    <div class="help-text">
+                        <strong>格式说明：</strong><br>
+                        1. 单行卡密：每行一个卡密<br>
+                        2. 多行卡密：多行内容组成一个卡密，不同卡密之间用空行分隔<br>
+                        3. 支持任意格式的文本内容
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success">添加卡密</button>
+            </form>
+            
+            <!-- File upload form -->
+            <form id="fileForm" class="upload-form" action="/admin/products/{{.product.ID}}/codes/upload" method="post" enctype="multipart/form-data" style="display: none;">
+                <div class="form-group">
+                    <label>选择文件</label>
+                    <input type="file" name="file" accept=".txt,.csv" required>
+                    <div class="help-text">支持TXT或CSV文件，格式与文本输入相同</div>
+                </div>
+                <button type="submit" class="btn btn-success">上传卡密</button>
+            </form>
+        </div>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th style="width: 50%;">卡密内容</th>
+                        <th>状态</th>
+                        <th>添加时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .codes}}
+                    <tr>
+                        <td>{{.ID}}</td>
+                        <td>
+                            <span class="code-text">{{.Code}}</span>
+                        </td>
+                        <td>
+                            {{if .IsSold}}
+                                <span style="color: #ff9a8b;">已使用</span>
+                            {{else}}
+                                <span style="color: #84fab0;">未使用</span>
+                            {{end}}
+                        </td>
+                        <td class="time-text">{{.CreatedAt.Format "2006-01-02 15:04:05"}}</td>
+                        <td>
+                            {{if not .IsSold}}
+                                <button class="btn btn-danger btn-sm" onclick="deleteCode({{.ID}}, {{$.product.ID}})">删除</button>
+                            {{else}}
+                                -
+                            {{end}}
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+        
+        <div style="margin-top: 24px; text-align: center;">
+            <a href="/admin/products" class="btn">返回商品列表</a>
+        </div>
+    </div>
+    
+    <!-- Add Code Modal -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">批量添加卡密</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <form id="addForm" onsubmit="submitCodes(event)">
+                <div class="modal-body">
+                    <label style="color: var(--text-secondary); font-size: 14px; display: block; margin-bottom: 8px;">
+                        每行一个卡密，支持多行卡密（用|||分隔）
+                    </label>
+                    <textarea name="codes" placeholder="请输入卡密内容..." required></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" style="background: var(--glass-bg); color: var(--text-primary);" onclick="closeModal()">取消</button>
+                    <button type="submit" class="btn btn-success">添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        function showTab(tab) {
+            const textForm = document.getElementById('textForm');
+            const fileForm = document.getElementById('fileForm');
+            const textTab = document.getElementById('textTab');
+            const fileTab = document.getElementById('fileTab');
+            
+            if (tab === 'text') {
+                textForm.style.display = 'block';
+                fileForm.style.display = 'none';
+                textTab.style.background = 'var(--primary-gradient)';
+                textTab.style.color = 'white';
+                fileTab.style.background = 'var(--glass-bg)';
+                fileTab.style.color = 'var(--text-primary)';
+            } else {
+                textForm.style.display = 'none';
+                fileForm.style.display = 'block';
+                fileTab.style.background = 'var(--primary-gradient)';
+                fileTab.style.color = 'white';
+                textTab.style.background = 'var(--glass-bg)';
+                textTab.style.color = 'var(--text-primary)';
+            }
+        }
+        
+        function submitTextCodes(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+            
+            fetch(`/admin/products/{{.product.ID}}/codes/upload`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || '上传失败');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert(data.message || '添加成功！');
+                window.location.reload();
+            })
+            .catch(error => {
+                alert('添加失败: ' + error.message);
+            });
+        }
+        
+        function showAddModal() {
+            document.getElementById('addModal').style.display = 'block';
+        }
+        
+        function closeModal() {
+            document.getElementById('addModal').style.display = 'none';
+            document.getElementById('addForm').reset();
+        }
+        
+        function submitCodes(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+            
+            fetch(`/admin/products/{{.product.ID}}/codes`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('添加成功！');
+                    window.location.reload();
+                } else {
+                    alert('添加失败: ' + (data.error || '未知错误'));
+                }
+            })
+            .catch(error => {
+                alert('添加失败: ' + error.message);
+            });
+        }
+        
+        function deleteCode(codeId, productId) {
+            if (!confirm('确定要删除这个卡密吗？')) {
+                return;
+            }
+            
+            fetch(`/admin/codes/${codeId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || '删除失败');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert(data.message || '删除成功！');
+                window.location.reload();
+            })
+            .catch(error => {
+                alert('删除失败: ' + error.message);
+            });
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('addModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+    </script>
+    <script src="/static/theme.js"></script>
+    <script>
+        function toggleTheme() {
+            if (window.themeManager) {
+                window.themeManager.toggleTheme();
+            }
+        }
+    </script>
+</body>
+</html>

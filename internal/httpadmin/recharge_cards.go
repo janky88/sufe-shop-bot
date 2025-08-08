@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -20,22 +19,18 @@ func (s *Server) handleRechargeCardList(c *gin.Context) {
 	
 	perPage := 20
 	offset := (page - 1) * perPage
+	showUsed := c.Query("show_used") == "true"
 	
-	// Get total count
-	var total int64
-	s.db.Model(&store.RechargeCard{}).Count(&total)
-	
-	// Get cards
-	var cards []store.RechargeCard
-	if err := s.db.Order("created_at DESC").
-		Limit(perPage).
-		Offset(offset).
-		Preload("User").
-		Find(&cards).Error; err != nil {
+	// Get cards with new function
+	cards, total, err := store.GetRechargeCards(s.db, perPage, offset, showUsed)
+	if err != nil {
 		logger.Error("Failed to fetch recharge cards", "error", err)
 		c.String(http.StatusInternalServerError, "Database error")
 		return
 	}
+	
+	// Get statistics
+	totalCount, active, fullyUsed, expired, _ := store.GetRechargeCardStatsV2(s.db)
 	
 	// Calculate pagination
 	totalPages := int(total+int64(perPage)-1) / perPage
@@ -45,16 +40,23 @@ func (s *Server) handleRechargeCardList(c *gin.Context) {
 		"currentPage": page,
 		"totalPages":  totalPages,
 		"total":       total,
+		"totalCount":  totalCount,
+		"active":      active,
+		"fullyUsed":   fullyUsed,
+		"expired":     expired,
+		"showUsed":    showUsed,
 		"now":         time.Now(),
 	})
 }
 
 func (s *Server) handleRechargeCardGenerate(c *gin.Context) {
 	var req struct {
-		Count       int    `json:"count" form:"count"`
-		AmountCents int    `json:"amount_cents" form:"amount_cents"`
-		ExpiresIn   int    `json:"expires_in" form:"expires_in"` // Days
-		Prefix      string `json:"prefix" form:"prefix"`
+		Count          int    `json:"count" form:"count"`
+		AmountCents    int    `json:"amount_cents" form:"amount_cents"`
+		MaxUses        int    `json:"max_uses" form:"max_uses"`
+		MaxUsesPerUser int    `json:"max_uses_per_user" form:"max_uses_per_user"`
+		ExpiresIn      int    `json:"expires_in" form:"expires_in"` // Days
+		Prefix         string `json:"prefix" form:"prefix"`
 	}
 	
 	if err := c.ShouldBind(&req); err != nil {
@@ -69,13 +71,16 @@ func (s *Server) handleRechargeCardGenerate(c *gin.Context) {
 	}
 	
 	if req.AmountCents < 100 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Amount must be at least $1.00"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Amount must be at least 1"})
 		return
 	}
 	
-	// Set default prefix
-	if req.Prefix == "" {
-		req.Prefix = "RC"
+	// Set defaults
+	if req.MaxUses <= 0 {
+		req.MaxUses = 1
+	}
+	if req.MaxUsesPerUser <= 0 {
+		req.MaxUsesPerUser = 1
 	}
 	
 	// Calculate expiry
@@ -85,20 +90,9 @@ func (s *Server) handleRechargeCardGenerate(c *gin.Context) {
 		expiresAt = &exp
 	}
 	
-	// Generate cards
-	var cards []store.RechargeCard
-	for i := 0; i < req.Count; i++ {
-		card := store.RechargeCard{
-			Code:        store.GenerateRechargeCardCode(req.Prefix),
-			AmountCents: req.AmountCents,
-			ExpiresAt:   expiresAt,
-			IsUsed:      false,
-		}
-		cards = append(cards, card)
-	}
-	
-	// Batch insert
-	if err := s.db.CreateInBatches(cards, 100).Error; err != nil {
+	// Generate cards with new function
+	cards, err := store.GenerateRechargeCards(s.db, req.Count, req.AmountCents, req.MaxUses, req.MaxUsesPerUser, expiresAt)
+	if err != nil {
 		logger.Error("Failed to generate recharge cards", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate cards"})
 		return
@@ -125,24 +119,31 @@ func (s *Server) handleRechargeCardDelete(c *gin.Context) {
 		return
 	}
 	
-	// Check if card is used
-	var card store.RechargeCard
-	if err := s.db.First(&card, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Card not found"})
-		return
-	}
-	
-	if card.IsUsed {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot delete used card"})
-		return
-	}
-	
-	// Delete card
-	if err := s.db.Delete(&card).Error; err != nil {
+	// Use new delete function
+	if err := store.DeleteRechargeCard(s.db, uint(id)); err != nil {
 		logger.Error("Failed to delete recharge card", "error", err, "id", id)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete card"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	
 	c.JSON(http.StatusOK, gin.H{"message": "Card deleted successfully"})
+}
+
+func (s *Server) handleRechargeCardUsage(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+	
+	// Get usage details
+	usages, err := store.GetRechargeCardUsages(s.db, uint(id))
+	if err != nil {
+		logger.Error("Failed to fetch recharge card usage", "error", err, "id", id)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+		return
+	}
+	
+	c.JSON(http.StatusOK, gin.H{"usages": usages})
 }

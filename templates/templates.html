@@ -1,171 +1,462 @@
 <!DOCTYPE html>
-<html>
+<html data-theme="light">
 <head>
-    <title>Message Templates - Admin</title>
+    <title>消息模板管理 - 商城机器人管理中心</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="stylesheet" href="/static/theme.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f5f5f5;
+        /* Modern UI Base Styles with Aurora Gradient */
+        * { 
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
-        .container {
-            max-width: 1200px;
+        
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --aurora-gradient: linear-gradient(
+                45deg,
+                rgba(102, 126, 234, 0.1) 0%,
+                rgba(118, 75, 162, 0.1) 25%,
+                rgba(255, 154, 139, 0.1) 50%,
+                rgba(255, 206, 84, 0.1) 75%,
+                rgba(102, 126, 234, 0.1) 100%
+            );
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Aurora Background Animation */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(255, 154, 139, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(255, 206, 84, 0.2) 0%, transparent 50%);
+            animation: aurora 20s ease-in-out infinite;
+            z-index: -1;
+        }
+        
+        @keyframes aurora {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(5deg) scale(1.1); }
+            50% { transform: rotate(-5deg) scale(1); }
+            75% { transform: rotate(3deg) scale(1.05); }
+        }
+        
+        /* Glassmorphism Header */
+        .header {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 8px 32px var(--shadow-color);
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--aurora-gradient);
+            opacity: 0.5;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+        
+        @keyframes shimmer {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+        
+        .header-content {
+            max-width: 1400px;
             margin: 0 auto;
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 70px;
+            position: relative;
+            z-index: 1;
         }
-        h1 {
-            color: #333;
-            margin-bottom: 20px;
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
         }
+        
+        .logout-btn {
+            padding: 10px 24px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+        }
+        
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+        }
+        
+        .container { 
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        /* Glass Navigation */
+        .nav { 
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 8px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px var(--shadow-color);
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        
+        .nav::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .nav a { 
+            flex: 0 0 auto;
+            padding: 12px 24px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            text-align: center;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .nav a:hover { 
+            background: var(--glass-bg);
+            color: var(--text-primary);
+        }
+        
+        .nav a.active {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .page-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Template Group */
         .template-group {
-            margin-bottom: 30px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 15px;
+            margin-bottom: 32px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 0 8px 32px var(--shadow-color);
         }
+        
         .template-group h3 {
             margin-top: 0;
-            color: #2196F3;
+            margin-bottom: 24px;
+            font-size: 24px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
+        
         .template-item {
-            margin-bottom: 20px;
-            padding: 15px;
-            background-color: #f9f9f9;
-            border-radius: 5px;
+            margin-bottom: 24px;
+            padding: 24px;
+            background: var(--hover-bg);
+            border: 1px solid var(--glass-bg);
+            border-radius: 16px;
+            transition: all 0.3s ease;
         }
+        
+        .template-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px var(--shadow-color);
+        }
+        
         .template-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 16px;
         }
+        
         .template-lang {
-            font-weight: bold;
-            padding: 4px 8px;
-            background-color: #e3f2fd;
-            border-radius: 3px;
+            font-weight: 600;
+            padding: 6px 14px;
+            background: rgba(102, 126, 234, 0.2);
+            color: #667eea;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 20px;
             font-size: 14px;
         }
+        
         .template-status {
-            padding: 4px 8px;
-            border-radius: 3px;
+            padding: 6px 14px;
+            border-radius: 20px;
             font-size: 12px;
+            font-weight: 500;
         }
+        
         .status-active {
-            background-color: #e8f5e9;
-            color: #2e7d32;
+            background: rgba(132, 250, 176, 0.2);
+            color: #84fab0;
+            border: 1px solid rgba(132, 250, 176, 0.3);
         }
+        
         .status-inactive {
-            background-color: #ffebee;
-            color: #d32f2f;
+            background: rgba(245, 87, 108, 0.2);
+            color: #f5576c;
+            border: 1px solid rgba(245, 87, 108, 0.3);
         }
+        
         .template-variables {
-            margin: 10px 0;
+            margin: 16px 0;
             font-size: 14px;
-            color: #666;
+            color: var(--text-secondary);
         }
+        
         .variable {
             display: inline-block;
-            padding: 2px 6px;
-            margin: 2px;
-            background-color: #ffe0b2;
-            border-radius: 3px;
+            padding: 4px 10px;
+            margin: 4px;
+            background: rgba(255, 206, 84, 0.2);
+            color: #ffce54;
+            border: 1px solid rgba(255, 206, 84, 0.3);
+            border-radius: 12px;
             font-family: monospace;
             font-size: 12px;
         }
+        
         textarea {
             width: 100%;
             height: 120px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            padding: 12px 16px;
+            background: var(--hover-bg);
+            border: 1px solid var(--glass-bg);
+            border-radius: 12px;
+            color: var(--text-primary);
             font-family: monospace;
             font-size: 14px;
             resize: vertical;
+            transition: all 0.3s ease;
         }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
         .template-actions {
-            margin-top: 10px;
+            margin-top: 16px;
             display: flex;
-            gap: 10px;
+            gap: 12px;
         }
+        
         button {
-            padding: 8px 16px;
+            padding: 10px 24px;
             border: none;
-            border-radius: 4px;
+            border-radius: 12px;
             cursor: pointer;
             font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
         }
+        
         .save-btn {
-            background-color: #4CAF50;
-            color: white;
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            color: #1a1a2e;
+            box-shadow: 0 4px 15px rgba(132, 250, 176, 0.3);
         }
+        
         .save-btn:hover {
-            background-color: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(132, 250, 176, 0.4);
         }
+        
         .cancel-btn {
-            background-color: #f44336;
-            color: white;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: var(--text-primary);
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
         }
+        
         .cancel-btn:hover {
-            background-color: #d32f2f;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
         }
+        
         .edit-btn {
-            background-color: #2196F3;
-            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--text-primary);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
         }
+        
         .edit-btn:hover {
-            background-color: #1976D2;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
         }
+        
         .toggle-btn {
-            background-color: #ff9800;
-            color: white;
+            background: linear-gradient(135deg, #ff9a8b 0%, #ffce54 100%);
+            color: #1a1a2e;
+            box-shadow: 0 4px 15px rgba(255, 206, 84, 0.3);
         }
+        
         .toggle-btn:hover {
-            background-color: #f57c00;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 206, 84, 0.4);
         }
+        
         .preview {
-            margin-top: 10px;
-            padding: 10px;
-            background-color: #f5f5f5;
-            border-left: 3px solid #2196F3;
+            margin-top: 16px;
+            padding: 16px;
+            background: var(--hover-bg);
+            border-left: 3px solid #667eea;
+            border-radius: 8px;
             white-space: pre-wrap;
             font-family: monospace;
             font-size: 14px;
+            color: var(--text-primary);
         }
+        
         .info-box {
-            background-color: #e3f2fd;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px var(--shadow-color);
         }
+        
         .info-box h4 {
             margin-top: 0;
+            margin-bottom: 12px;
+            color: var(--text-primary);
         }
+        
+        .info-box p {
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
         .info-box code {
-            background-color: #bbdefb;
-            padding: 2px 4px;
-            border-radius: 3px;
+            background: rgba(102, 126, 234, 0.2);
+            color: #667eea;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+        }
+        
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 24px;
+            }
+            
+            .template-actions {
+                flex-wrap: wrap;
+            }
         }
     </style>
+    <script>
+    function logout() {
+        fetch('/api/logout', { method: 'POST' })
+            .then(() => window.location.href = '/')
+            .catch(err => console.error('Logout failed:', err));
+    }
+    </script>
 </head>
 <body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">商城机器人管理中心</div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="theme-toggle" onclick="toggleTheme()" title="切换主题 (Ctrl+Shift+T)">
+                    <span class="theme-toggle-icon sun">☀️</span>
+                    <span class="theme-toggle-icon moon">🌙</span>
+                </button>
+                <button class="logout-btn" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+    </div>
+    
     <div class="container">
-        <h1>Message Templates Management</h1>
+        <div class="nav">
+            <a href="/admin/">仪表盘</a>
+            <a href="/admin/products">商品管理</a>
+            <a href="/admin/orders">订单管理</a>
+            <a href="/admin/users">用户管理</a>
+            <a href="/admin/recharge-cards">充值卡管理</a>
+            <a href="/admin/broadcast">消息推送</a>
+            <a href="/admin/faq">FAQ管理</a>
+            <a href="/admin/templates" class="active">消息模板</a>
+            <a href="/admin/settings">系统设置</a>
+        </div>
+        
+        <h1 class="page-title">消息模板管理</h1>
         
         <div class="info-box">
-            <h4>Template Variables Guide</h4>
-            <p>Use Go template syntax to include variables: <code>{{.VariableName}}</code></p>
-            <p>Example: <code>Order ID: {{.OrderID}}</code></p>
+            <h4>模板变量使用指南</h4>
+            <p>使用Go模板语法来插入变量: <code>{{.VariableName}}</code></p>
+            <p>示例: <code>订单ID: {{.OrderID}}</code></p>
         </div>
         
         {{range $code, $templates := .templateMap}}
         <div class="template-group">
             <h3>{{$code}}</h3>
             <div class="template-variables">
-                Available variables:
+                可用变量:
                 {{range index $.variables $code}}
                 <span class="variable">{{.}}</span>
                 {{end}}
@@ -176,17 +467,17 @@
                 <div class="template-header">
                     <span class="template-lang">{{.Language}}</span>
                     <span class="template-status {{if .IsActive}}status-active{{else}}status-inactive{{end}}">
-                        {{if .IsActive}}Active{{else}}Inactive{{end}}
+                        {{if .IsActive}}启用{{else}}停用{{end}}
                     </span>
                 </div>
                 
                 <div class="edit-form" style="display: none;">
                     <textarea id="content-{{.ID}}" data-original="{{.Content}}">{{.Content}}</textarea>
                     <div class="template-actions">
-                        <button class="save-btn" onclick="saveTemplate({{.ID}})">Save</button>
-                        <button class="cancel-btn" onclick="cancelEdit({{.ID}})">Cancel</button>
+                        <button class="save-btn" onclick="saveTemplate({{.ID}})">保存</button>
+                        <button class="cancel-btn" onclick="cancelEdit({{.ID}})">取消</button>
                         <button class="toggle-btn" onclick="toggleStatus({{.ID}}, {{.IsActive}})">
-                            {{if .IsActive}}Deactivate{{else}}Activate{{end}}
+                            {{if .IsActive}}停用{{else}}启用{{end}}
                         </button>
                     </div>
                 </div>
@@ -194,7 +485,7 @@
                 <div class="view-mode">
                     <div class="preview">{{.Content}}</div>
                     <div class="template-actions">
-                        <button class="edit-btn" onclick="editTemplate({{.ID}})">Edit</button>
+                        <button class="edit-btn" onclick="editTemplate({{.ID}})">编辑</button>
                     </div>
                 </div>
             </div>
@@ -275,6 +566,14 @@
                 }
             } catch (error) {
                 alert('Error: ' + error.message);
+            }
+        }
+    </script>
+    <script src="/static/theme.js"></script>
+    <script>
+        function toggleTheme() {
+            if (window.themeManager) {
+                window.themeManager.toggleTheme();
             }
         }
     </script>
