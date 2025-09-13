@@ -1,0 +1,235 @@
+/* User List Page Specific Styles */
+
+/* User Search Section */
+.user-search {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 32px var(--shadow-color);
+}
+
+.search-form {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.search-input {
+    flex: 1;
+    padding: 10px 16px;
+    background: var(--hover-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* User Table */
+.user-table {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px var(--shadow-color);
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.user-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.user-table th {
+    background: var(--hover-bg);
+    padding: 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.user-table td {
+    padding: 16px;
+    border-top: 1px solid var(--glass-border);
+    vertical-align: middle;
+}
+
+.user-table tr:hover {
+    background: var(--hover-bg);
+}
+
+/* User Info Styles */
+.user-link {
+    text-decoration: none;
+    display: inline-block;
+}
+
+.user-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.user-id {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    font-family: 'Courier New', Courier, monospace;
+}
+
+/* Balance Display */
+.user-balance {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Status Badges */
+.user-status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.user-status.active {
+    background: rgba(132, 250, 176, 0.2);
+    color: #84fab0;
+}
+
+.user-status.inactive {
+    background: rgba(245, 87, 108, 0.2);
+    color: #f5576c;
+}
+
+/* Order Count */
+.order-count {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* Actions Column */
+.user-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* Empty State */
+.empty-users {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+}
+
+.empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-text {
+    font-size: 16px;
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 32px;
+}
+
+.pagination a,
+.pagination span {
+    padding: 8px 16px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.pagination a:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+    border-color: #667eea;
+}
+
+.pagination .active {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+}
+
+.pagination .disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Header Actions */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .user-table {
+        border-radius: 12px;
+    }
+    
+    .user-table th,
+    .user-table td {
+        padding: 12px;
+        font-size: 13px;
+    }
+    
+    .search-form {
+        flex-direction: column;
+    }
+    
+    .search-input {
+        width: 100%;
+    }
+    
+    .user-actions {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .user-actions .btn {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .pagination a,
+    .pagination span {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+}

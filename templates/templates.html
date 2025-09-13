@@ -1,500 +1,358 @@
 <!DOCTYPE html>
-<html data-theme="light">
+<html lang="zh-CN" data-theme="light">
 <head>
-    <title>消息模板管理 - 商城机器人管理中心</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#ffffff">
-    <link rel="stylesheet" href="/static/css/theme.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>消息模板 - 商城机器人管理中心</title>
+    
+    <!-- Modern Theme System -->
+    <link rel="stylesheet" href="/static/css/modern-theme.css?v=1">
+    <link rel="stylesheet" href="/static/css/modern-components.css?v=1">
+    <link rel="stylesheet" href="/static/css/modern-layout.css?v=1">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Page Styles -->
     <style>
-        /* Modern UI Base Styles with Aurora Gradient */
-        * { 
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+        .info-box {
+            background: var(--info-bg);
+            border: 1px solid var(--info-color);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
         }
         
-        :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --aurora-gradient: linear-gradient(
-                45deg,
-                rgba(102, 126, 234, 0.1) 0%,
-                rgba(118, 75, 162, 0.1) 25%,
-                rgba(255, 154, 139, 0.1) 50%,
-                rgba(255, 206, 84, 0.1) 75%,
-                rgba(102, 126, 234, 0.1) 100%
-            );
-        }
-        
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
-        }
-        
-        /* Aurora Background Animation */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 40% 20%, rgba(255, 154, 139, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 70% 30%, rgba(255, 206, 84, 0.2) 0%, transparent 50%);
-            animation: aurora 20s ease-in-out infinite;
-            z-index: -1;
-        }
-        
-        @keyframes aurora {
-            0%, 100% { transform: rotate(0deg) scale(1); }
-            25% { transform: rotate(5deg) scale(1.1); }
-            50% { transform: rotate(-5deg) scale(1); }
-            75% { transform: rotate(3deg) scale(1.05); }
-        }
-        
-        /* Glassmorphism Header */
-        .header {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--glass-border);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            box-shadow: 0 8px 32px var(--shadow-color);
-        }
-        
-        .header::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: var(--aurora-gradient);
-            opacity: 0.5;
-            animation: shimmer 3s ease-in-out infinite;
-        }
-        
-        @keyframes shimmer {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 0.8; }
-        }
-        
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 24px;
+        .info-box h4 {
+            color: var(--info-color);
+            margin-top: 0;
+            margin-bottom: var(--spacing-sm);
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            height: 70px;
-            position: relative;
-            z-index: 1;
+            gap: var(--spacing-sm);
         }
         
-        .logo {
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.5px;
+        .info-box h4:before {
+            content: '\f05a';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
         }
         
-        .logout-btn {
-            padding: 10px 24px;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+        .info-box code {
+            background: var(--bg-secondary);
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-mono);
+            color: var(--primary-color);
         }
         
-        .logout-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
-        }
-        
-        .container { 
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 24px;
-        }
-        
-        /* Glass Navigation */
-        .nav { 
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 8px;
-            margin-bottom: 24px;
-            box-shadow: 0 8px 32px var(--shadow-color);
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            scrollbar-width: none;
-        }
-        
-        .nav::-webkit-scrollbar {
-            display: none;
-        }
-        
-        .nav a { 
-            flex: 0 0 auto;
-            padding: 12px 24px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            text-align: center;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            white-space: nowrap;
-        }
-        
-        .nav a:hover { 
-            background: var(--glass-bg);
-            color: var(--text-primary);
-        }
-        
-        .nav a.active {
-            background: var(--primary-gradient);
-            color: white;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        }
-        
-        .page-title {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 32px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        /* Template Group */
         .template-group {
-            margin-bottom: 32px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 32px;
-            box-shadow: 0 8px 32px var(--shadow-color);
+            margin-bottom: var(--spacing-xl);
         }
         
         .template-group h3 {
-            margin-top: 0;
-            margin-bottom: 24px;
-            font-size: 24px;
-            font-weight: 600;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-sm);
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+        
+        .template-group h3:before {
+            content: '\f1ea';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            color: var(--primary-color);
+        }
+        
+        .template-variables {
+            background: var(--bg-secondary);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-md);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        .variable {
+            display: inline-block;
+            background: var(--surface-color);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            margin: var(--spacing-xs);
+            border-radius: var(--radius-sm);
+            font-family: var(--font-mono);
+            color: var(--primary-color);
+            border: 1px solid var(--border-color);
         }
         
         .template-item {
-            margin-bottom: 24px;
-            padding: 24px;
-            background: var(--hover-bg);
-            border: 1px solid var(--glass-bg);
-            border-radius: 16px;
-            transition: all 0.3s ease;
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-md);
+            transition: var(--transition-default);
         }
         
         .template-item:hover {
-            background: rgba(255, 255, 255, 0.08);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px var(--shadow-color);
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         
         .template-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 16px;
+            margin-bottom: var(--spacing-md);
         }
         
         .template-lang {
-            font-weight: 600;
-            padding: 6px 14px;
-            background: rgba(102, 126, 234, 0.2);
-            color: #667eea;
-            border: 1px solid rgba(102, 126, 234, 0.3);
-            border-radius: 20px;
-            font-size: 14px;
+            background: var(--primary-bg);
+            color: var(--primary-color);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            font-weight: 500;
         }
         
         .template-status {
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 12px;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
             font-weight: 500;
         }
         
         .status-active {
-            background: rgba(132, 250, 176, 0.2);
-            color: #84fab0;
-            border: 1px solid rgba(132, 250, 176, 0.3);
+            background: var(--success-bg);
+            color: var(--success-color);
         }
         
         .status-inactive {
-            background: rgba(245, 87, 108, 0.2);
-            color: #f5576c;
-            border: 1px solid rgba(245, 87, 108, 0.3);
+            background: var(--danger-bg);
+            color: var(--danger-color);
         }
         
-        .template-variables {
-            margin: 16px 0;
-            font-size: 14px;
+        .template-preview {
+            background: var(--bg-secondary);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            margin-bottom: var(--spacing-md);
             color: var(--text-secondary);
         }
         
-        .variable {
-            display: inline-block;
-            padding: 4px 10px;
-            margin: 4px;
-            background: rgba(255, 206, 84, 0.2);
-            color: #ffce54;
-            border: 1px solid rgba(255, 206, 84, 0.3);
-            border-radius: 12px;
-            font-family: monospace;
-            font-size: 12px;
-        }
-        
-        textarea {
+        .template-textarea {
             width: 100%;
-            height: 120px;
-            padding: 12px 16px;
-            background: var(--hover-bg);
-            border: 1px solid var(--glass-bg);
-            border-radius: 12px;
+            min-height: 150px;
+            padding: var(--spacing-md);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            background: var(--bg-primary);
             color: var(--text-primary);
-            font-family: monospace;
-            font-size: 14px;
             resize: vertical;
-            transition: all 0.3s ease;
+            margin-bottom: var(--spacing-md);
         }
         
-        textarea:focus {
+        .template-textarea:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px var(--primary-bg);
         }
         
         .template-actions {
-            margin-top: 16px;
             display: flex;
-            gap: 12px;
+            gap: var(--spacing-sm);
+            justify-content: flex-end;
         }
         
-        button {
-            padding: 10px 24px;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
+        .edit-form {
+            animation: fadeIn 0.3s ease-in-out;
         }
         
-        .save-btn {
-            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-            color: #1a1a2e;
-            box-shadow: 0 4px 15px rgba(132, 250, 176, 0.3);
-        }
-        
-        .save-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(132, 250, 176, 0.4);
-        }
-        
-        .cancel-btn {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: var(--text-primary);
-            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
-        }
-        
-        .cancel-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
-        }
-        
-        .edit-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: var(--text-primary);
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        }
-        
-        .edit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
-        
-        .toggle-btn {
-            background: linear-gradient(135deg, #ff9a8b 0%, #ffce54 100%);
-            color: #1a1a2e;
-            box-shadow: 0 4px 15px rgba(255, 206, 84, 0.3);
-        }
-        
-        .toggle-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(255, 206, 84, 0.4);
-        }
-        
-        .preview {
-            margin-top: 16px;
-            padding: 16px;
-            background: var(--hover-bg);
-            border-left: 3px solid #667eea;
-            border-radius: 8px;
-            white-space: pre-wrap;
-            font-family: monospace;
-            font-size: 14px;
-            color: var(--text-primary);
-        }
-        
-        .info-box {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 8px 32px var(--shadow-color);
-        }
-        
-        .info-box h4 {
-            margin-top: 0;
-            margin-bottom: 12px;
-            color: var(--text-primary);
-        }
-        
-        .info-box p {
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-        }
-        
-        .info-box code {
-            background: rgba(102, 126, 234, 0.2);
-            color: #667eea;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-family: monospace;
-        }
-        
-        @media (max-width: 768px) {
-            .page-title {
-                font-size: 24px;
-            }
-            
-            .template-actions {
-                flex-wrap: wrap;
-            }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
     </style>
-    <script>
-    function logout() {
-        fetch('/api/logout', { method: 'POST' })
-            .then(() => window.location.href = '/')
-            .catch(err => console.error('Logout failed:', err));
-    }
-    </script>
 </head>
 <body>
-    <div class="header">
-        <div class="header-content">
-            <div class="logo">商城机器人管理中心</div>
-            <div style="display: flex; align-items: center; gap: 16px;">
-                <button class="theme-toggle" onclick="toggleTheme()" title="切换主题 (Ctrl+Shift+T)">
-                    <span class="theme-toggle-icon sun">☀️</span>
-                    <span class="theme-toggle-icon moon">🌙</span>
-                </button>
-                <button class="logout-btn" onclick="logout()">退出登录</button>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                    商城机器人管理中心
+                </div>
+                <div class="header-actions">
+                    <button class="theme-toggle" onclick="toggleTheme()">
+                        <i class="fas fa-sun sun-icon theme-toggle-icon"></i>
+                        <i class="fas fa-moon moon-icon theme-toggle-icon"></i>
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        退出登录
+                    </button>
+                </div>
             </div>
-        </div>
-    </div>
-    
-    <div class="container">
-        <div class="nav">
-            <a href="/admin/">仪表盘</a>
-            <a href="/admin/products">商品管理</a>
-            <a href="/admin/orders">订单管理</a>
-            <a href="/admin/users">用户管理</a>
-            <a href="/admin/recharge-cards">充值卡管理</a>
-            <a href="/admin/broadcast">消息推送</a>
-            <a href="/admin/faq">FAQ管理</a>
-            <a href="/admin/templates" class="active">消息模板</a>
-            <a href="/admin/settings">系统设置</a>
-        </div>
-        
-        <h1 class="page-title">消息模板管理</h1>
-        
-        <div class="info-box">
-            <h4>模板变量使用指南</h4>
-            <p>使用Go模板语法来插入变量: <code>{{.VariableName}}</code></p>
-            <p>示例: <code>订单ID: {{.OrderID}}</code></p>
-        </div>
-        
-        {{range $code, $templates := .templateMap}}
-        <div class="template-group">
-            <h3>{{$code}}</h3>
-            <div class="template-variables">
-                可用变量:
-                {{range index $.variables $code}}
-                <span class="variable">{{.}}</span>
-                {{end}}
+        </header>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">主要功能</div>
+                    <a href="/admin/">
+                        <i class="fas fa-tachometer-alt nav-icon"></i>
+                        仪表盘
+                    </a>
+                    <a href="/admin/products">
+                        <i class="fas fa-box nav-icon"></i>
+                        商品管理
+                    </a>
+                    <a href="/admin/orders">
+                        <i class="fas fa-shopping-cart nav-icon"></i>
+                        订单管理
+                    </a>
+                    <a href="/admin/users">
+                        <i class="fas fa-users nav-icon"></i>
+                        用户管理
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">运营工具</div>
+                    <a href="/admin/recharge-cards">
+                        <i class="fas fa-credit-card nav-icon"></i>
+                        充值卡管理
+                    </a>
+                    <a href="/admin/broadcast">
+                        <i class="fas fa-bullhorn nav-icon"></i>
+                        消息推送
+                    </a>
+                    <a href="/admin/faq">
+                        <i class="fas fa-question-circle nav-icon"></i>
+                        FAQ管理
+                    </a>
+                    <a href="/admin/templates" class="active">
+                        <i class="fas fa-file-alt nav-icon"></i>
+                        消息模板
+                    </a>
+                    <a href="/admin/tickets">
+                        <i class="fas fa-ticket-alt nav-icon"></i>
+                        工单管理
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">系统</div>
+                    <a href="/admin/settings">
+                        <i class="fas fa-cog nav-icon"></i>
+                        系统设置
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <h1 class="page-title">消息模板管理</h1>
+                    <p class="page-subtitle">管理系统消息模板</p>
+                </div>
+
+            <div class="info-box">
+                <h4>模板变量使用指南</h4>
+                <p>使用Go模板语法来插入变量: <code>{{.VariableName}}</code></p>
+                <p>示例: <code>订单ID: {{.OrderID}}</code></p>
             </div>
             
-            {{range $templates}}
-            <div class="template-item" id="template-{{.ID}}">
-                <div class="template-header">
-                    <span class="template-lang">{{.Language}}</span>
-                    <span class="template-status {{if .IsActive}}status-active{{else}}status-inactive{{end}}">
-                        {{if .IsActive}}启用{{else}}停用{{end}}
-                    </span>
+            {{range $code, $templates := .templateMap}}
+            <div class="template-group">
+                <h3>{{$code}}</h3>
+                <div class="template-variables">
+                    <i class="fas fa-code"></i> 可用变量:
+                    {{range index $.variables $code}}
+                    <span class="variable">{{.}}</span>
+                    {{end}}
                 </div>
                 
-                <div class="edit-form" style="display: none;">
-                    <textarea id="content-{{.ID}}" data-original="{{.Content}}">{{.Content}}</textarea>
-                    <div class="template-actions">
-                        <button class="save-btn" onclick="saveTemplate({{.ID}})">保存</button>
-                        <button class="cancel-btn" onclick="cancelEdit({{.ID}})">取消</button>
-                        <button class="toggle-btn" onclick="toggleStatus({{.ID}}, {{.IsActive}})">
-                            {{if .IsActive}}停用{{else}}启用{{end}}
-                        </button>
+                {{range $templates}}
+                <div class="template-item" id="template-{{.ID}}">
+                    <div class="template-header">
+                        <span class="template-lang">
+                            <i class="fas fa-language"></i> {{.Language}}
+                        </span>
+                        <span class="template-status {{if .IsActive}}status-active{{else}}status-inactive{{end}}">
+                            {{if .IsActive}}<i class="fas fa-check-circle"></i> 启用{{else}}<i class="fas fa-times-circle"></i> 停用{{end}}
+                        </span>
+                    </div>
+                    
+                    <div class="edit-form" style="display: none;">
+                        <textarea class="template-textarea" id="content-{{.ID}}" data-original="{{.Content}}">{{.Content}}</textarea>
+                        <div class="template-actions">
+                            <button class="btn btn-success" onclick="saveTemplate({{.ID}})">
+                                <i class="fas fa-save"></i> 保存
+                            </button>
+                            <button class="btn btn-secondary" onclick="cancelEdit({{.ID}})">
+                                <i class="fas fa-times"></i> 取消
+                            </button>
+                            <button class="btn btn-warning" onclick="toggleStatus({{.ID}}, {{.IsActive}})">
+                                {{if .IsActive}}<i class="fas fa-pause"></i> 停用{{else}}<i class="fas fa-play"></i> 启用{{end}}
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="view-mode">
+                        <div class="template-preview">{{.Content}}</div>
+                        <div class="template-actions">
+                            <button class="btn btn-primary" onclick="editTemplate({{.ID}})">
+                                <i class="fas fa-edit"></i> 编辑
+                            </button>
+                        </div>
                     </div>
                 </div>
-                
-                <div class="view-mode">
-                    <div class="preview">{{.Content}}</div>
-                    <div class="template-actions">
-                        <button class="edit-btn" onclick="editTemplate({{.ID}})">编辑</button>
-                    </div>
-                </div>
+                {{end}}
             </div>
             {{end}}
-        </div>
-        {{end}}
+            </div>
+        </main>
     </div>
     
+    <!-- Scripts -->
     <script>
+        // Theme Toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Load saved theme
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        });
+        
+        // Logout function
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                fetch('/api/logout', { method: 'POST' })
+                    .then(() => window.location.href = '/')
+                    .catch(err => console.error('Logout failed:', err));
+            }
+        }
+        
         const authToken = localStorage.getItem('adminToken') || '';
         
         function editTemplate(id) {
@@ -529,13 +387,13 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    alert(result.message);
+                    alert(result.message || '模板已保存');
                     location.reload();
                 } else {
-                    alert('Error: ' + result.error);
+                    alert('保存失败: ' + result.error);
                 }
             } catch (error) {
-                alert('Error: ' + error.message);
+                alert('保存失败: ' + error.message);
             }
         }
         
@@ -559,21 +417,13 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    alert(result.message);
+                    alert(result.message || '状态已更新');
                     location.reload();
                 } else {
-                    alert('Error: ' + result.error);
+                    alert('更新失败: ' + result.error);
                 }
             } catch (error) {
-                alert('Error: ' + error.message);
-            }
-        }
-    </script>
-    <script src="/static/theme.js"></script>
-    <script>
-        function toggleTheme() {
-            if (window.themeManager) {
-                window.themeManager.toggleTheme();
+                alert('更新失败: ' + error.message);
             }
         }
     </script>

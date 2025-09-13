@@ -1,681 +1,446 @@
 <!DOCTYPE html>
-<html data-theme="light">
+<html lang="zh-CN" data-theme="light">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>充值卡管理 - 商城机器人管理中心</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#ffffff">
-    <link rel="stylesheet" href="/static/css/theme.css">
+    
+    <!-- Modern Theme System -->
+    <link rel="stylesheet" href="/static/css/modern-theme.css?v=1">
+    <link rel="stylesheet" href="/static/css/modern-components.css?v=1">
+    <link rel="stylesheet" href="/static/css/modern-layout.css?v=1">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Page Styles -->
     <style>
-        /* Modern UI Base Styles with Aurora Gradient */
-        * { 
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        
-        :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --aurora-gradient: linear-gradient(
-                45deg,
-                rgba(102, 126, 234, 0.1) 0%,
-                rgba(118, 75, 162, 0.1) 25%,
-                rgba(255, 154, 139, 0.1) 50%,
-                rgba(255, 206, 84, 0.1) 75%,
-                rgba(102, 126, 234, 0.1) 100%
-            );
-        }
-        
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
-        }
-        
-        /* Aurora Background Animation */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 40% 20%, rgba(255, 154, 139, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 70% 30%, rgba(255, 206, 84, 0.2) 0%, transparent 50%);
-            animation: aurora 20s ease-in-out infinite;
-            z-index: -1;
-        }
-        
-        @keyframes aurora {
-            0%, 100% { transform: rotate(0deg) scale(1); }
-            25% { transform: rotate(5deg) scale(1.1); }
-            50% { transform: rotate(-5deg) scale(1); }
-            75% { transform: rotate(3deg) scale(1.05); }
-        }
-        
-        /* Glassmorphism Header */
-        .header {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--glass-border);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            box-shadow: 0 8px 32px var(--shadow-color);
-        }
-        
-        .header::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: var(--aurora-gradient);
-            opacity: 0.5;
-            animation: shimmer 3s ease-in-out infinite;
-        }
-        
-        @keyframes shimmer {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 0.8; }
-        }
-        
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 70px;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .logo {
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.5px;
-        }
-        
-        /* Glass Navigation */
-        .nav { 
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 8px;
-            margin-bottom: 24px;
-            box-shadow: 0 8px 32px var(--shadow-color);
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            scrollbar-width: none;
-        }
-        
-        .nav::-webkit-scrollbar {
-            display: none;
-        }
-        
-        .nav a { 
-            flex: 0 0 auto;
-            padding: 12px 24px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            text-align: center;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            white-space: nowrap;
-        }
-        
-        .nav a:hover { 
-            background: var(--glass-bg);
-            color: var(--text-primary);
-        }
-        
-        .nav a.active {
-            background: var(--primary-gradient);
-            color: white;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        }
-        
-        .logout-btn {
-            padding: 10px 24px;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
-        }
-        
-        .logout-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
-        }
-        
-        .container { 
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 24px;
-        }
-        
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 32px;
-        }
-        
-        .page-title {
-            font-size: 32px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .stats {
+        .stat-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 24px;
-            margin-bottom: 32px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xl);
         }
         
         .stat-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 32px;
-            box-shadow: 0 8px 32px var(--shadow-color);
+            background: var(--surface-color);
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-lg);
             text-align: center;
-            transition: all 0.3s ease;
+            border: 1px solid var(--border-color);
+            transition: var(--transition-default);
         }
         
         .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 40px var(--shadow-color);
-        }
-        
-        .stat-label {
-            font-size: 14px;
-            color: var(--text-secondary);
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
         }
         
         .stat-value {
-            font-size: 36px;
+            font-size: 2rem;
             font-weight: 700;
-            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--primary-color);
+            margin-top: var(--spacing-sm);
         }
         
-        .generate-form {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 32px;
-            margin-bottom: 32px;
-            box-shadow: 0 8px 32px var(--shadow-color);
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
         }
         
-        .generate-form h3 {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 24px;
-            color: var(--text-primary);
-        }
-        
-        .generate-form form {
+        .form-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            align-items: end;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
         }
         
-        .generate-form label {
+        .download-section {
+            background: var(--success-bg);
+            border: 1px solid var(--success-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            margin: var(--spacing-xl) 0;
+            text-align: center;
+        }
+        
+        .download-actions {
             display: flex;
-            flex-direction: column;
-            gap: 8px;
-            color: var(--text-secondary);
-            font-size: 14px;
+            gap: var(--spacing-md);
+            justify-content: center;
+            margin-top: var(--spacing-lg);
+            flex-wrap: wrap;
         }
         
-        .generate-form input,
-        .generate-form select {
-            padding: 10px 16px;
-            background: var(--hover-bg);
-            border: 1px solid var(--glass-bg);
-            border-radius: 12px;
-            color: var(--text-primary);
-            font-size: 14px;
-            transition: all 0.3s ease;
-            width: 100%;
-        }
-        
-        .generate-form input:focus,
-        .generate-form select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            background: rgba(255, 255, 255, 0.08);
-        }
-        
-        .generate-form select option {
-            background: #1a1a2e;
-        }
-        
-        .btn {
-            padding: 12px 32px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
+        .recharge-code {
+            font-family: var(--font-mono);
+            background: var(--bg-secondary);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-sm);
             cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            transition: var(--transition-default);
         }
         
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
-        
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .btn-success {
-            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-            color: #1a1a2e;
-            box-shadow: 0 4px 15px rgba(132, 250, 176, 0.3);
-        }
-        
-        .btn-success:hover {
-            box-shadow: 0 6px 20px rgba(132, 250, 176, 0.4);
-        }
-        
-        .btn-danger {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
-        }
-        
-        .btn-danger:hover {
-            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
-        }
-        
-        .table-container {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 8px 32px var(--shadow-color);
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        th {
-            background: var(--hover-bg);
-            padding: 16px;
-            text-align: left;
-            font-weight: 600;
-            color: var(--text-primary);
-            border-bottom: 1px solid var(--glass-border);
-        }
-        
-        td {
-            padding: 16px;
-            border-bottom: 1px solid var(--hover-bg);
-            color: var(--text-primary);
-        }
-        
-        tr:hover {
-            background: rgba(255, 255, 255, 0.02);
-        }
-        
-        .code-text {
-            font-family: 'Courier New', monospace;
-            background: var(--hover-bg);
-            padding: 4px 8px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .code-text:hover {
-            background: var(--glass-bg);
+        .recharge-code:hover {
+            background: var(--primary-bg);
+            color: var(--primary-color);
         }
         
         .status-badge {
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 12px;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
             font-weight: 500;
             display: inline-block;
         }
         
         .status-active {
-            background: rgba(132, 250, 176, 0.2);
-            color: #84fab0;
-            border: 1px solid rgba(132, 250, 176, 0.3);
+            background: var(--success-bg);
+            color: var(--success-color);
         }
         
         .status-used {
-            background: rgba(255, 206, 84, 0.2);
-            color: #ffce54;
-            border: 1px solid rgba(255, 206, 84, 0.3);
+            background: var(--danger-bg);
+            color: var(--danger-color);
         }
         
         .status-expired {
-            background: rgba(245, 87, 108, 0.2);
-            color: #f5576c;
-            border: 1px solid rgba(245, 87, 108, 0.3);
-        }
-        
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            padding: 24px;
-        }
-        
-        .pagination a, .pagination span {
-            padding: 8px 16px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
-            text-decoration: none;
-            color: var(--text-secondary);
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-        
-        .pagination a:hover {
-            background: var(--glass-bg);
-            color: var(--text-primary);
-        }
-        
-        .pagination .current {
-            background: var(--primary-gradient);
-            color: var(--text-primary);
-            border-color: transparent;
-        }
-        
-        .download-codes {
-            display: none;
-            margin-top: 24px;
-            padding: 24px;
-            background: rgba(132, 250, 176, 0.1);
-            border-radius: 16px;
-            border: 1px solid rgba(132, 250, 176, 0.2);
-        }
-        
-        .download-codes strong {
-            display: block;
-            margin-bottom: 16px;
-            color: #84fab0;
-            font-size: 18px;
-        }
-        
-        .download-codes button {
-            margin-right: 12px;
-            margin-bottom: 12px;
-        }
-        
-        .download-codes textarea {
-            width: 100%;
-            height: 200px;
-            margin-top: 16px;
-            padding: 16px;
-            background: var(--hover-bg);
-            border: 1px solid var(--glass-bg);
-            border-radius: 12px;
-            color: var(--text-primary);
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            resize: vertical;
-        }
-        
-        .alert {
-            padding: 16px 20px;
-            border-radius: 12px;
-            margin-bottom: 24px;
-        }
-        
-        .alert-success {
-            background: rgba(132, 250, 176, 0.2);
-            border: 1px solid rgba(132, 250, 176, 0.3);
-            color: #84fab0;
-        }
-        
-        .alert-danger {
-            background: rgba(245, 87, 108, 0.2);
-            border: 1px solid rgba(245, 87, 108, 0.3);
-            color: #f5576c;
-        }
-        
-        @media (max-width: 768px) {
-            .page-title {
-                font-size: 24px;
-            }
-            
-            .generate-form form {
-                grid-template-columns: 1fr;
-            }
-            
-            .stats {
-                grid-template-columns: 1fr;
-            }
+            background: var(--warning-bg);
+            color: var(--warning-color);
         }
     </style>
-    <script>
-    function logout() {
-        fetch('/api/logout', { method: 'POST' })
-            .then(() => window.location.href = '/')
-            .catch(err => console.error('Logout failed:', err));
-    }
-    </script>
 </head>
 <body>
-    <div class="header">
-        <div class="header-content">
-            <div class="logo">商城机器人管理中心</div>
-            <div style="display: flex; align-items: center; gap: 16px;">
-                <button class="theme-toggle" onclick="toggleTheme()" title="切换主题 (Ctrl+Shift+T)">
-                    <span class="theme-toggle-icon sun">☀️</span>
-                    <span class="theme-toggle-icon moon">🌙</span>
-                </button>
-                <button class="logout-btn" onclick="logout()">退出登录</button>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                    商城机器人管理中心
+                </div>
+                <div class="header-actions">
+                    <button class="theme-toggle" onclick="toggleTheme()">
+                        <i class="fas fa-sun sun-icon theme-toggle-icon"></i>
+                        <i class="fas fa-moon moon-icon theme-toggle-icon"></i>
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        退出登录
+                    </button>
+                </div>
             </div>
-        </div>
-    </div>
-    
-    <div class="container">
-        <div class="nav">
-            <a href="/admin/">仪表盘</a>
-            <a href="/admin/products">商品管理</a>
-            <a href="/admin/orders">订单管理</a>
-            <a href="/admin/users">用户管理</a>
-            <a href="/admin/recharge-cards" class="active">充值卡管理</a>
-            <a href="/admin/broadcast">消息推送</a>
-            <a href="/admin/faq">FAQ管理</a>
-            <a href="/admin/templates">消息模板</a>
-            <a href="/admin/settings">系统设置</a>
-        </div>
-        
-        <div class="page-header">
-            <h1 class="page-title">充值卡管理</h1>
-            <a href="/admin/download-template" class="btn btn-success">下载上传模板</a>
-        </div>
-        
-        {{if .error}}
-        <div class="alert alert-danger">{{.error}}</div>
-        {{end}}
-        
-        {{if .success}}
-        <div class="alert alert-success">{{.success}}</div>
-        {{end}}
-        
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-label">总充值卡数</div>
-                <div class="stat-value">{{.totalCount}}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">可用充值卡</div>
-                <div class="stat-value">{{.active}}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">已用完</div>
-                <div class="stat-value">{{.fullyUsed}}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">已过期</div>
-                <div class="stat-value">{{.expired}}</div>
-            </div>
-        </div>
-        
-        <div class="generate-form">
-            <h3>生成新充值卡</h3>
-            <form id="generateForm">
-                <label>前缀: <input type="text" name="prefix" value="RC" maxlength="10" style="width: 100px;"></label>
-                <label>数量: <input type="number" name="count" min="1" max="1000" value="10" style="width: 80px;"></label>
-                <label>金额: {{currency}}<input type="number" name="amount" min="1" step="0.01" value="10.00" style="width: 80px;"></label>
-                <label>总使用次数: <input type="number" name="max_uses" min="1" max="999999" value="1" style="width: 80px;"></label>
-                <label>单用户限制: <input type="number" name="max_uses_per_user" min="1" max="999999" value="1" style="width: 80px;"></label>
-                <label>有效期: 
-                    <select name="expires_in">
-                        <option value="86400">1天</option>
-                        <option value="259200">3天</option>
-                        <option value="604800" selected>7天</option>
-                        <option value="2592000">30天</option>
-                        <option value="7776000">90天</option>
-                        <option value="31536000">365天</option>
-                    </select>
-                </label>
-                <button type="submit" class="btn">生成充值卡</button>
-            </form>
-        </div>
-        
-        <div class="generate-form">
-            <h3>批量导入充值卡</h3>
-            <form id="uploadForm" method="post" action="/admin/recharge-cards/upload" enctype="multipart/form-data">
-                <label>选择文件: <input type="file" name="file" accept=".txt,.csv" required></label>
-                <button type="submit" class="btn btn-success">上传充值卡</button>
-            </form>
-            <div style="margin-top: 16px; color: var(--text-secondary); font-size: 14px; grid-column: 1 / -1;">
-                文件格式：每行一个充值码，格式为 "充值码,金额,总使用次数,单用户限制"
-            </div>
-        </div>
-        
-        <div class="download-codes" id="downloadCodes">
-            <strong>充值卡生成成功！</strong>
-            <button class="btn btn-success" onclick="downloadTxt()">下载TXT文件</button>
-            <button class="btn btn-success" onclick="downloadCsv()">下载CSV文件</button>
-            <button class="btn" onclick="copyAllCodes()">复制所有充值码</button>
-            <textarea id="codesTextarea" readonly></textarea>
-        </div>
-        
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>充值码</th>
-                        <th>金额</th>
-                        <th>使用次数</th>
-                        <th>状态</th>
-                        <th>过期时间</th>
-                        <th>创建时间</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{range .cards}}
-                    <tr>
-                        <td>
-                            <span class="code-text" onclick="copyCode('{{.Code}}')" title="点击复制">{{.Code}}</span>
-                        </td>
-                        <td>{{$.currency}}{{printf "%.2f" (divf .AmountCents 100)}}</td>
-                        <td>{{.UsedCount}}/{{.MaxUses}}</td>
-                        <td>
-                            {{if eq .Status "active"}}
-                                <span class="status-badge status-active">可用</span>
-                            {{else if eq .Status "fully_used"}}
-                                <span class="status-badge status-used">已用完</span>
-                            {{else if eq .Status "expired"}}
-                                <span class="status-badge status-expired">已过期</span>
-                            {{end}}
-                        </td>
-                        <td>{{.ExpiresAt.Format "2006-01-02 15:04"}}</td>
-                        <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
-                        <td>
-                            {{if eq .Status "active"}}
-                                <button class="btn btn-danger" style="padding: 6px 16px; font-size: 12px;" onclick="deleteCard({{.ID}})">删除</button>
-                            {{end}}
-                        </td>
-                    </tr>
-                    {{end}}
-                </tbody>
-            </table>
-        </div>
-        
-        <div class="pagination">
-            {{if gt .totalPages 1}}
-                {{if gt .page 1}}
-                    <a href="?page={{subf .page 1}}">上一页</a>
-                {{end}}
+        </header>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">主要功能</div>
+                    <a href="/admin/">
+                        <i class="fas fa-tachometer-alt nav-icon"></i>
+                        仪表盘
+                    </a>
+                    <a href="/admin/products">
+                        <i class="fas fa-box nav-icon"></i>
+                        商品管理
+                    </a>
+                    <a href="/admin/orders">
+                        <i class="fas fa-shopping-cart nav-icon"></i>
+                        订单管理
+                    </a>
+                    <a href="/admin/users">
+                        <i class="fas fa-users nav-icon"></i>
+                        用户管理
+                    </a>
+                </div>
                 
-                {{range $i := seq 1 .totalPages}}
-                    {{if eq $i $.page}}
-                        <span class="current">{{$i}}</span>
-                    {{else}}
-                        <a href="?page={{$i}}">{{$i}}</a>
-                    {{end}}
-                {{end}}
+                <div class="nav-section">
+                    <div class="nav-section-title">运营工具</div>
+                    <a href="/admin/recharge-cards" class="active">
+                        <i class="fas fa-credit-card nav-icon"></i>
+                        充值卡管理
+                    </a>
+                    <a href="/admin/broadcast">
+                        <i class="fas fa-bullhorn nav-icon"></i>
+                        消息推送
+                    </a>
+                    <a href="/admin/faq">
+                        <i class="fas fa-question-circle nav-icon"></i>
+                        FAQ管理
+                    </a>
+                    <a href="/admin/templates">
+                        <i class="fas fa-file-alt nav-icon"></i>
+                        消息模板
+                    </a>
+                    <a href="/admin/tickets">
+                        <i class="fas fa-ticket-alt nav-icon"></i>
+                        工单管理
+                    </a>
+                </div>
                 
-                {{if lt .page .totalPages}}
-                    <a href="?page={{addf .page 1}}">下一页</a>
-                {{end}}
+                <div class="nav-section">
+                    <div class="nav-section-title">系统</div>
+                    <a href="/admin/settings">
+                        <i class="fas fa-cog nav-icon"></i>
+                        系统设置
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <h1 class="page-title">充值卡管理</h1>
+                    <p class="page-subtitle">管理您的充值卡和批量生成</p>
+                    
+                    <div class="page-actions">
+                    <a href="/admin/download-template" class="btn btn-primary">
+                        <i class="fas fa-download"></i> 下载上传模板
+                    </a>
+                </div>
+            </div>
+
+            {{if .error}}
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i> {{.error}}
+            </div>
             {{end}}
-        </div>
+            
+            {{if .success}}
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> {{.success}}
+            </div>
+            {{end}}
+
+            <!-- Statistics Cards -->
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-label">总充值卡数</div>
+                    <div class="stat-value">{{.totalCount}}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">可用充值卡</div>
+                    <div class="stat-value">{{.active}}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">已用完</div>
+                    <div class="stat-value">{{.fullyUsed}}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">已过期</div>
+                    <div class="stat-value">{{.expired}}</div>
+                </div>
+            </div>
+
+            <!-- Generate Cards Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-plus-circle"></i> 生成新充值卡
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form id="generateForm" class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">前缀</label>
+                            <input type="text" name="prefix" value="RC" maxlength="10" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">数量</label>
+                            <input type="number" name="count" min="1" max="1000" value="10" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">金额 ({{currency}})</label>
+                            <input type="number" name="amount" min="1" step="0.01" value="10.00" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">总使用次数</label>
+                            <input type="number" name="max_uses" min="1" max="999999" value="1" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">单用户限制</label>
+                            <input type="number" name="max_uses_per_user" min="1" max="999999" value="1" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">有效期</label>
+                            <select name="expires_in" class="form-control">
+                                <option value="86400">1天</option>
+                                <option value="259200">3天</option>
+                                <option value="604800" selected>7天</option>
+                                <option value="2592000">30天</option>
+                                <option value="7776000">90天</option>
+                                <option value="31536000">365天</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" form="generateForm" class="btn btn-primary">
+                        <i class="fas fa-magic"></i> 生成充值卡
+                    </button>
+                </div>
+            </div>
+
+            <!-- Upload Cards Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-upload"></i> 批量导入充值卡
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form id="uploadForm" method="post" action="/admin/recharge-cards/upload" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label class="form-label">选择文件</label>
+                            <input type="file" name="file" accept=".txt,.csv" required class="form-control">
+                            <small class="form-text">文件格式：每行一个充值码，��式为 "充值码,金额,总使用次数,单用户限制"</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" form="uploadForm" class="btn btn-success">
+                        <i class="fas fa-cloud-upload-alt"></i> 上传充值卡
+                    </button>
+                </div>
+            </div>
+
+            <!-- Download Section -->
+            <div class="download-section" id="downloadCodes" style="display: none;">
+                <i class="fas fa-check-circle" style="font-size: 3rem; color: var(--success-color); margin-bottom: 1rem;"></i>
+                <h3>充值卡生成成功！</h3>
+                <p>请下载或复制充值码进行保存</p>
+                <div class="download-actions">
+                    <button class="btn btn-success" onclick="downloadTxt()">
+                        <i class="fas fa-file-alt"></i> 下载TXT文件
+                    </button>
+                    <button class="btn btn-success" onclick="downloadCsv()">
+                        <i class="fas fa-file-csv"></i> 下载CSV文件
+                    </button>
+                    <button class="btn btn-secondary" onclick="copyAllCodes()">
+                        <i class="fas fa-copy"></i> 复制所有充值码
+                    </button>
+                </div>
+                <textarea id="codesTextarea" readonly style="display: none;"></textarea>
+            </div>
+
+            <!-- Cards Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-list"></i> 充值卡列表
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>充值码</th>
+                                    <th>金额</th>
+                                    <th>使用次数</th>
+                                    <th>状态</th>
+                                    <th>过期时间</th>
+                                    <th>创建时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{range .cards}}
+                                <tr>
+                                    <td>
+                                        <span class="recharge-code" onclick="copyCode('{{.Code}}')" title="点击复制">
+                                            {{.Code}}
+                                        </span>
+                                    </td>
+                                    <td>{{$.currency}}{{printf "%.2f" (divf .AmountCents 100)}}</td>
+                                    <td>{{.UsedCount}}/{{.MaxUses}}</td>
+                                    <td>
+                                        {{if eq .Status "active"}}
+                                            <span class="status-badge status-active">可用</span>
+                                        {{else if eq .Status "fully_used"}}
+                                            <span class="status-badge status-used">已用完</span>
+                                        {{else if eq .Status "expired"}}
+                                            <span class="status-badge status-expired">已过期</span>
+                                        {{end}}
+                                    </td>
+                                    <td>{{.ExpiresAt.Format "2006-01-02 15:04"}}</td>
+                                    <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+                                    <td>
+                                        {{if eq .Status "active"}}
+                                            <button class="btn btn-sm btn-danger" onclick="deleteCard({{.ID}})">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        {{end}}
+                                    </td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {{if gt .totalPages 1}}
+                <div class="card-footer">
+                    <div class="pagination">
+                        {{if gt .page 1}}
+                            <a href="?page={{subf .page 1}}" class="pagination-link">
+                                <i class="fas fa-chevron-left"></i> 上一页
+                            </a>
+                        {{end}}
+                        
+                        {{range $i := seq 1 .totalPages}}
+                            {{if eq $i $.page}}
+                                <span class="pagination-link active">{{$i}}</span>
+                            {{else}}
+                                <a href="?page={{$i}}" class="pagination-link">{{$i}}</a>
+                            {{end}}
+                        {{end}}
+                        
+                        {{if lt .page .totalPages}}
+                            <a href="?page={{addf .page 1}}" class="pagination-link">
+                                下一页 <i class="fas fa-chevron-right"></i>
+                            </a>
+                        {{end}}
+                    </div>
+                </div>
+                {{end}}
+            </div>
+            </div>
+        </main>
     </div>
     
+    <!-- Scripts -->
     <script>
+        // Theme Toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Load saved theme
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        });
+        
+        // Logout function
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                fetch('/api/logout', { method: 'POST' })
+                    .then(() => window.location.href = '/')
+                    .catch(err => console.error('Logout failed:', err));
+            }
+        }
+        
         let generatedCodes = [];
         
+        // Generate form handler
         document.getElementById('generateForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -800,14 +565,6 @@
                 }
             } catch (error) {
                 alert('删除失败: ' + error.message);
-            }
-        }
-    </script>
-    <script src="/static/theme.js"></script>
-    <script>
-        function toggleTheme() {
-            if (window.themeManager) {
-                window.themeManager.toggleTheme();
             }
         }
     </script>

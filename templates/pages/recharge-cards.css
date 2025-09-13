@@ -1,0 +1,303 @@
+/* Recharge Cards Page Specific Styles */
+
+/* Stats Grid */
+.recharge-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+}
+
+/* Generate Card Section */
+.generate-section {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+    box-shadow: 0 8px 32px var(--shadow-color);
+}
+
+.generate-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-lg);
+    align-items: end;
+}
+
+.generate-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+}
+
+/* Download Section */
+.download-section {
+    background: rgba(132, 250, 176, 0.1);
+    border: 1px solid rgba(132, 250, 176, 0.3);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+}
+
+.download-info {
+    flex: 1;
+}
+
+.download-info h3 {
+    font-size: var(--font-lg);
+    font-weight: 600;
+    color: #84fab0;
+    margin-bottom: var(--spacing-xs);
+}
+
+.download-info p {
+    color: var(--text-secondary);
+    font-size: var(--font-sm);
+}
+
+.download-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+/* Recharge Table */
+.recharge-table {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: 0 8px 32px var(--shadow-color);
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.recharge-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.recharge-table th {
+    background: var(--hover-bg);
+    padding: var(--spacing-md);
+    text-align: left;
+    font-weight: 600;
+    font-size: var(--font-sm);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.recharge-table td {
+    padding: var(--spacing-md);
+    border-top: 1px solid var(--glass-border);
+    vertical-align: middle;
+}
+
+.recharge-table tr:hover {
+    background: var(--hover-bg);
+}
+
+/* Recharge Code Display */
+.recharge-code {
+    font-family: 'Courier New', Courier, monospace;
+    background: var(--bg-secondary);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-sm);
+    word-break: break-all;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.recharge-code:hover {
+    background: var(--hover-bg);
+}
+
+/* Recharge Amount */
+.recharge-amount {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Recharge Status */
+.recharge-status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.recharge-status.unused {
+    background: rgba(132, 250, 176, 0.2);
+    color: #84fab0;
+}
+
+.recharge-status.used {
+    background: rgba(245, 87, 108, 0.2);
+    color: #f5576c;
+}
+
+/* User Link */
+.recharge-user {
+    color: var(--text-primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.recharge-user:hover {
+    color: #667eea;
+    text-decoration: underline;
+}
+
+/* Actions Column */
+.recharge-actions {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+/* Empty State */
+.empty-recharge {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+}
+
+.empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-text {
+    font-size: 16px;
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 32px;
+}
+
+.pagination a,
+.pagination span {
+    padding: 8px 16px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.pagination a:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+    border-color: #667eea;
+}
+
+.pagination .active {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+}
+
+.pagination .disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Modal Styles */
+.batch-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+}
+
+.batch-modal-content {
+    background: var(--bg-primary);
+    margin: 10% auto;
+    padding: var(--spacing-xl);
+    width: 90%;
+    max-width: 600px;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 20px 60px var(--shadow-color);
+}
+
+.batch-codes-display {
+    background: var(--bg-secondary);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    margin: var(--spacing-lg) 0;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.batch-code-item {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: var(--font-sm);
+    padding: var(--spacing-xs) 0;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.batch-code-item:last-child {
+    border-bottom: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .recharge-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .generate-form {
+        grid-template-columns: 1fr;
+    }
+    
+    .download-section {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .download-actions {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .recharge-table th,
+    .recharge-table td {
+        padding: var(--spacing-sm);
+        font-size: var(--font-xs);
+    }
+    
+    .recharge-actions {
+        flex-direction: column;
+    }
+}

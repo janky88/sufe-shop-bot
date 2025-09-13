@@ -9,6 +9,9 @@ type User struct {
 	ID           uint      `gorm:"primaryKey"`
 	TgUserID     int64     `gorm:"uniqueIndex;not null"`
 	Username     string    `gorm:"size:100"`
+	TgUsername   string    `gorm:"size:100"`
+	TgFirstName  string    `gorm:"size:100"`
+	TgLastName   string    `gorm:"size:100"`
 	Language     string    `gorm:"size:10;default:'en'"`
 	BalanceCents int       `gorm:"default:0;not null"` // User balance in cents
 	CreatedAt    time.Time
@@ -208,6 +211,68 @@ type FAQ struct {
 	Answer    string    `gorm:"type:text;not null"`
 	Language  string    `gorm:"size:10;not null;default:'zh'"`
 	SortOrder int       `gorm:"default:0"`
+	IsActive  bool      `gorm:"default:true"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+// AdminUser represents an admin user
+type AdminUser struct {
+	ID                   uint       `gorm:"primaryKey"`
+	Username             string     `gorm:"uniqueIndex;size:50;not null"`
+	Password             string     `gorm:"size:255;not null"`
+	Email                string     `gorm:"size:100"`
+	IsActive             bool       `gorm:"default:true"`
+	IsSuperAdmin         bool       `gorm:"default:false"`
+	TelegramID           *int64     `gorm:"index"`
+	ReceiveNotifications bool       `gorm:"default:true"`
+	LastLoginAt          *time.Time
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
+}
+
+// Ticket represents a support ticket
+type Ticket struct {
+	ID          uint      `gorm:"primaryKey"`
+	TicketID    string    `gorm:"uniqueIndex;size:50"` // e.g., "TK-20240312-001"
+	UserID      int64     `gorm:"index;not null"`      // Telegram user ID
+	Username    string    `gorm:"size:100"`
+	Status      string    `gorm:"size:20;default:'open'"` // open, in_progress, resolved, closed
+	Priority    string    `gorm:"size:20;default:'normal'"` // low, normal, high, urgent
+	Subject     string    `gorm:"size:200;not null"`
+	Category    string    `gorm:"size:50"` // order_issue, payment_issue, product_issue, other
+	AssignedTo  *uint     `gorm:"index"`   // Admin user ID (nullable)
+	LastReplyAt *time.Time
+	ResolvedAt  *time.Time
+	ClosedAt    *time.Time
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+
+	// Relations
+	Messages []TicketMessage `gorm:"foreignKey:TicketID;references:ID"`
+	AssignedBy *AdminUser `gorm:"foreignKey:AssignedTo;references:ID"`
+}
+
+// TicketMessage represents a message in a ticket conversation
+type TicketMessage struct {
+	ID         uint      `gorm:"primaryKey"`
+	TicketID   uint      `gorm:"index;not null"`
+	SenderType string    `gorm:"size:20;not null"` // user, admin, system
+	SenderID   int64     `gorm:"not null"`         // Telegram user ID or Admin ID
+	SenderName string    `gorm:"size:100"`
+	Content    string    `gorm:"type:text;not null"`
+	MessageID  int       // Telegram message ID for reference
+	IsRead     bool      `gorm:"default:false"`
+	ReadAt     *time.Time
+	CreatedAt  time.Time
+}
+
+// TicketTemplate represents a template for quick replies
+type TicketTemplate struct {
+	ID        uint      `gorm:"primaryKey"`
+	Name      string    `gorm:"size:100;not null"`
+	Category  string    `gorm:"size:50"`
+	Content   string    `gorm:"type:text;not null"`
 	IsActive  bool      `gorm:"default:true"`
 	CreatedAt time.Time
 	UpdatedAt time.Time

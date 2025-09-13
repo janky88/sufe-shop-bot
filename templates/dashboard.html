@@ -1,173 +1,394 @@
-{{define "content"}}
-<div class="page-header">
-    <h1 class="page-title">仪表盘</h1>
-</div>
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仪表盘 - 商城机器人管理中心</title>
+    
+    <!-- Modern CSS -->
+    <link rel="stylesheet" href="/static/css/modern-theme.css?v=2">
+    <link rel="stylesheet" href="/static/css/modern-components.css?v=2">
+    <link rel="stylesheet" href="/static/css/modern-layout.css?v=3">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                    商城机器人管理中心
+                </div>
+                <div class="header-actions">
+                    <button class="theme-toggle" onclick="toggleTheme()">
+                        <i class="fas fa-sun sun-icon theme-toggle-icon"></i>
+                        <i class="fas fa-moon moon-icon theme-toggle-icon"></i>
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        退出登录
+                    </button>
+                </div>
+            </div>
+        </header>
 
-<div class="quick-actions mb-4">
-    <a href="/admin/products" class="btn btn-primary">商品管理</a>
-    <a href="/admin/orders" class="btn btn-success">订单管理</a>
-    <a href="/admin/broadcast" class="btn btn-danger">发送广播</a>
-</div>
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">主要功能</div>
+                    <a href="/admin/" class="active">
+                        <i class="fas fa-tachometer-alt nav-icon"></i>
+                        仪表盘
+                    </a>
+                    <a href="/admin/products">
+                        <i class="fas fa-box nav-icon"></i>
+                        商品管理
+                    </a>
+                    <a href="/admin/orders">
+                        <i class="fas fa-shopping-cart nav-icon"></i>
+                        订单管理
+                    </a>
+                    <a href="/admin/users">
+                        <i class="fas fa-users nav-icon"></i>
+                        用户管理
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">运营工具</div>
+                    <a href="/admin/recharge-cards">
+                        <i class="fas fa-credit-card nav-icon"></i>
+                        充值卡管理
+                    </a>
+                    <a href="/admin/broadcast">
+                        <i class="fas fa-bullhorn nav-icon"></i>
+                        消息推送
+                    </a>
+                    <a href="/admin/faq">
+                        <i class="fas fa-question-circle nav-icon"></i>
+                        FAQ管理
+                    </a>
+                    <a href="/admin/templates">
+                        <i class="fas fa-file-alt nav-icon"></i>
+                        消息模板
+                    </a>
+                    <a href="/admin/tickets">
+                        <i class="fas fa-ticket-alt nav-icon"></i>
+                        工单管理
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">系统</div>
+                    <a href="/admin/settings">
+                        <i class="fas fa-cog nav-icon"></i>
+                        系统设置
+                    </a>
+                </div>
+            </nav>
+        </aside>
 
-<div class="stats">
-    <div class="stat-card">
-        <div class="stat-value">{{.stats.TotalUsers}}</div>
-        <div class="stat-label">总用户数</div>
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <h1 class="page-title">仪表盘</h1>
+                    <p class="page-subtitle">欢迎回来！这里是您的商城运营概览</p>
+                    
+                    <div class="page-actions">
+                        <a href="/admin/products" class="btn btn-primary">
+                            <i class="fas fa-plus"></i>
+                            添加商品
+                        </a>
+                        <a href="/admin/orders" class="btn btn-secondary">
+                            <i class="fas fa-list"></i>
+                            查看订单
+                        </a>
+                        <a href="/admin/broadcast" class="btn btn-secondary">
+                            <i class="fas fa-paper-plane"></i>
+                            发送消息
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">{{.stats.TotalUsers}}</div>
+                        <div class="stat-label">总用户数</div>
+                        <div class="stat-trend positive">
+                            <i class="fas fa-arrow-up"></i>
+                            12.5%
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-value">{{.stats.TotalProducts}}</div>
+                        <div class="stat-label">商品数量</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-value">{{.stats.TotalOrders}}</div>
+                        <div class="stat-label">总订单数</div>
+                        <div class="stat-trend positive">
+                            <i class="fas fa-arrow-up"></i>
+                            8.2%
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-value">{{.currency}}{{printf "%.2f" (divf .stats.TotalRevenue 100)}}</div>
+                        <div class="stat-label">总收入</div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">销售趋势</h3>
+                            <select class="form-select form-control" style="width: auto;">
+                                <option>最近7天</option>
+                                <option>最近30天</option>
+                                <option>最近90天</option>
+                            </select>
+                        </div>
+                        <div style="position: relative; height: 300px;">
+                            <canvas id="salesChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="chart-card mb-3">
+                            <div class="chart-header">
+                                <h3 class="chart-title">订单状态</h3>
+                            </div>
+                            <div style="position: relative; height: 200px;">
+                                <canvas id="ordersChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3 class="chart-title">热销商品</h3>
+                            </div>
+                            <div style="position: relative; height: 200px;">
+                                <canvas id="productsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Orders -->
+                <div class="content-section">
+                    <div class="section-header">
+                        <h2 class="section-title">最近订单</h2>
+                        <div class="section-actions">
+                            <a href="/admin/orders" class="btn btn-sm btn-secondary">查看全部</a>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>订单号</th>
+                                    <th>用户</th>
+                                    <th>商品</th>
+                                    <th>金额</th>
+                                    <th>状态</th>
+                                    <th>时间</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{range .recent_orders}}
+                                <tr>
+                                    <td>#{{.ID}}</td>
+                                    <td>{{.User.Username}}</td>
+                                    <td>
+                                        {{if .Product}}
+                                            {{.Product.Name}}
+                                        {{else}}
+                                            余额充值
+                                        {{end}}
+                                    </td>
+                                    <td>{{$.currency}}{{printf "%.2f" (divf .AmountCents 100)}}</td>
+                                    <td>
+                                        {{if eq .Status "pending"}}
+                                            <span class="badge badge-warning">待支付</span>
+                                        {{else if eq .Status "paid"}}
+                                            <span class="badge badge-info">已支付</span>
+                                        {{else if eq .Status "delivered"}}
+                                            <span class="badge badge-success">已发货</span>
+                                        {{else}}
+                                            <span class="badge">{{.Status}}</span>
+                                        {{end}}
+                                    </td>
+                                    <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
-    <div class="stat-card">
-        <div class="stat-value">{{.stats.TotalProducts}}</div>
-        <div class="stat-label">商品数量</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value">{{.stats.TotalOrders}}</div>
-        <div class="stat-label">总订单数</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value">{{.currency}}{{printf "%.2f" (divf .stats.TotalRevenue 100)}}</div>
-        <div class="stat-label">总收入</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value">{{.stats.TodayOrders}}</div>
-        <div class="stat-label">今日订单</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value">{{.currency}}{{printf "%.2f" (divf .stats.TodayRevenue 100)}}</div>
-        <div class="stat-label">今日收入</div>
-    </div>
-</div>
 
-<div class="section">
-    <h2 class="section-title">最近订单</h2>
-    <div class="glass-card">
-        <table>
-            <thead>
-                <tr>
-                    <th>订单号</th>
-                    <th>用户</th>
-                    <th>商品</th>
-                    <th>金额</th>
-                    <th>状态</th>
-                    <th>时间</th>
-                </tr>
-            </thead>
-            <tbody>
-                {{range .recent_orders}}
-                <tr>
-                    <td>#{{.ID}}</td>
-                    <td>{{.User.Username}}</td>
-                    <td>
-                        {{if .Product}}
-                            {{.Product.Name}}
-                        {{else}}
-                            余额充值
-                        {{end}}
-                    </td>
-                    <td>{{$.currency}}{{printf "%.2f" (divf .AmountCents 100)}}</td>
-                    <td>
-                        {{if eq .Status "pending"}}
-                            <span class="badge badge-warning">待支付</span>
-                        {{else if eq .Status "paid"}}
-                            <span class="badge badge-success">已支付</span>
-                        {{else if eq .Status "delivered"}}
-                            <span class="badge badge-info">已发货</span>
-                        {{else}}
-                            <span class="badge badge-default">{{.Status}}</span>
-                        {{end}}
-                    </td>
-                    <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
-                </tr>
-                {{end}}
-            </tbody>
-        </table>
-    </div>
-</div>
-{{end}}
-
-{{define "styles"}}
-<style>
-    .page-header {
-        margin-bottom: var(--spacing-xl);
-    }
-
-    .page-title {
-        font-size: var(--font-size-3xl);
-        font-weight: var(--font-weight-bold);
-        background: var(--primary-gradient);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    .quick-actions {
-        display: flex;
-        gap: var(--spacing-md);
-        flex-wrap: wrap;
-    }
-
-    .stats {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: var(--spacing-lg);
-        margin-bottom: var(--spacing-xl);
-    }
-
-    .stat-card {
-        background: var(--glass-bg);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid var(--glass-border);
-        border-radius: var(--radius-2xl);
-        padding: var(--spacing-xl);
-        box-shadow: 0 8px 32px var(--shadow-color);
-        text-align: center;
-        transition: all var(--transition-slow);
-    }
-
-    .stat-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 40px var(--shadow-color);
-    }
-
-    .stat-value {
-        font-size: 36px;
-        font-weight: var(--font-weight-bold);
-        margin-bottom: var(--spacing-sm);
-        background: var(--success-gradient);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    .stat-label {
-        font-size: var(--font-size-sm);
-        color: var(--text-secondary);
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-
-    .section {
-        margin-bottom: var(--spacing-xl);
-    }
-
-    .section-title {
-        font-size: var(--font-size-2xl);
-        font-weight: var(--font-weight-semibold);
-        margin-bottom: var(--spacing-lg);
-        color: var(--text-primary);
-    }
-
-    @media (max-width: 768px) {
-        .quick-actions {
-            flex-direction: column;
+    <!-- Scripts -->
+    <script>
+        // Theme Toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
         }
 
-        .quick-actions .btn {
-            width: 100%;
-        }
+        // Load saved theme
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        });
 
-        .stats {
-            grid-template-columns: 1fr;
+        // Logout function
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                fetch('/api/logout', { method: 'POST' })
+                    .then(() => window.location.href = '/')
+                    .catch(err => console.error('Logout failed:', err));
+            }
         }
-    }
-</style>
-{{end}}
+    </script>
+    
+    <!-- Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script>
+        // Chart.js global configuration
+        Chart.defaults.responsive = true;
+        Chart.defaults.maintainAspectRatio = false;
+
+        // Prepare data from server
+        const salesData = {{.sales_data}};
+        const orderStatus = {{.order_status}};
+        const topProducts = {{.top_products}};
+
+        // Sales Chart
+        const salesCtx = document.getElementById('salesChart').getContext('2d');
+        new Chart(salesCtx, {
+            type: 'line',
+            data: {
+                labels: salesData.map(d => d.Date),
+                datasets: [{
+                    label: '销售额',
+                    data: salesData.map(d => d.Amount / 100), // Convert cents to currency units
+                    borderColor: 'rgb(99, 102, 241)',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '{{.currency}}' + value.toFixed(2);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Orders Chart
+        const ordersCtx = document.getElementById('ordersChart').getContext('2d');
+
+        // Map status to Chinese labels
+        const statusLabels = {
+            'delivered': '已完成',
+            'paid': '已支付',
+            'pending': '待支付',
+            'paid_no_stock': '缺货',
+            'expired': '已过期',
+            'failed_delivery': '发货失败'
+        };
+
+        const statusColors = {
+            'delivered': 'rgb(34, 197, 94)',
+            'paid': 'rgb(59, 130, 246)',
+            'pending': 'rgb(245, 158, 11)',
+            'paid_no_stock': 'rgb(239, 68, 68)',
+            'expired': 'rgb(156, 163, 175)',
+            'failed_delivery': 'rgb(220, 38, 38)'
+        };
+
+        new Chart(ordersCtx, {
+            type: 'doughnut',
+            data: {
+                labels: orderStatus.map(s => statusLabels[s.Status] || s.Status),
+                datasets: [{
+                    data: orderStatus.map(s => s.Count),
+                    backgroundColor: orderStatus.map(s => statusColors[s.Status] || 'rgb(156, 163, 175)')
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 10,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Products Chart
+        const productsCtx = document.getElementById('productsChart').getContext('2d');
+        new Chart(productsCtx, {
+            type: 'bar',
+            data: {
+                labels: topProducts.slice(0, 4).map(p => p.ProductName || '未知商品'),
+                datasets: [{
+                    label: '销量',
+                    data: topProducts.slice(0, 4).map(p => p.Count),
+                    backgroundColor: 'rgba(99, 102, 241, 0.8)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

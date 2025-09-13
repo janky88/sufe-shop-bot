@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>支付成功 - 商城机器人</title>
+
+    <!-- Modern Theme System -->
+    <link rel="stylesheet" href="/static/css/modern-theme.css?v=1">
+    <link rel="stylesheet" href="/static/css/modern-components.css?v=1">
+    <link rel="stylesheet" href="/static/css/modern-layout.css?v=1">
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            background: var(--bg-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .success-container {
+            max-width: 600px;
+            width: 100%;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-lg);
+            padding: 3rem;
+            text-align: center;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .success-icon {
+            width: 100px;
+            height: 100px;
+            background: var(--success-light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            animation: scaleIn 0.5s ease-out 0.2s both;
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+            }
+            to {
+                transform: scale(1);
+            }
+        }
+
+        .success-icon i {
+            font-size: 3rem;
+            color: var(--success-color);
+        }
+
+        .success-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            animation: fadeIn 0.5s ease-out 0.4s both;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .success-message {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+            animation: fadeIn 0.5s ease-out 0.6s both;
+        }
+
+        .order-details {
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            animation: fadeIn 0.5s ease-out 0.8s both;
+        }
+
+        .order-detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .order-detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .detail-value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .amount {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+
+        .next-steps {
+            background: var(--info-light);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            text-align: left;
+            animation: fadeIn 0.5s ease-out 1s both;
+        }
+
+        .next-steps-title {
+            font-weight: 600;
+            color: var(--info-dark);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .next-steps-title i {
+            color: var(--info-color);
+        }
+
+        .next-steps ul {
+            margin: 0;
+            padding-left: 1.5rem;
+            color: var(--info-dark);
+        }
+
+        .next-steps li {
+            margin: 0.5rem 0;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+            animation: fadeIn 0.5s ease-out 1.2s both;
+        }
+
+        .btn-telegram {
+            background: #0088cc;
+            color: white;
+        }
+
+        .btn-telegram:hover {
+            background: #006699;
+        }
+
+        .footer-note {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            animation: fadeIn 0.5s ease-out 1.4s both;
+        }
+
+        .telegram-bot-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .telegram-bot-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 640px) {
+            .success-container {
+                padding: 2rem;
+            }
+
+            .success-title {
+                font-size: 1.5rem;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="success-container">
+        <div class="success-icon">
+            <i class="fas fa-check"></i>
+        </div>
+
+        <h1 class="success-title">支付成功！</h1>
+        <p class="success-message">
+            感谢您的购买！您的订单已成功支付。<br>
+            商品将通过 Telegram 机器人自动发送给您。
+        </p>
+
+        {{if .orderInfo}}
+        <div class="order-details">
+            {{if .orderInfo.OrderNo}}
+            <div class="order-detail-item">
+                <span class="detail-label">订单号</span>
+                <span class="detail-value">{{.orderInfo.OrderNo}}</span>
+            </div>
+            {{end}}
+            {{if .orderInfo.ProductName}}
+            <div class="order-detail-item">
+                <span class="detail-label">商品名称</span>
+                <span class="detail-value">{{.orderInfo.ProductName}}</span>
+            </div>
+            {{end}}
+            {{if .orderInfo.Amount}}
+            <div class="order-detail-item">
+                <span class="detail-label">支付金额</span>
+                <span class="detail-value amount">¥{{.orderInfo.Amount}}</span>
+            </div>
+            {{end}}
+            {{if .orderInfo.PayType}}
+            <div class="order-detail-item">
+                <span class="detail-label">支付方式</span>
+                <span class="detail-value">
+                    {{if eq .orderInfo.PayType "wxpay"}}
+                        <i class="fab fa-weixin" style="color: #07c160;"></i> 微信支付
+                    {{else if eq .orderInfo.PayType "alipay"}}
+                        <i class="fab fa-alipay" style="color: #1677ff;"></i> 支付宝
+                    {{else}}
+                        {{.orderInfo.PayType}}
+                    {{end}}
+                </span>
+            </div>
+            {{end}}
+        </div>
+        {{end}}
+
+        <div class="next-steps">
+            <div class="next-steps-title">
+                <i class="fas fa-info-circle"></i>
+                接下来怎么做？
+            </div>
+            <ul>
+                <li>打开您的 Telegram 应用</li>
+                <li>查找我们的机器人消息</li>
+                <li>您购买的商品已经自动发送</li>
+                <li>如有问题，可以通过机器人联系客服</li>
+            </ul>
+        </div>
+
+        <div class="action-buttons">
+            <a href="{{.botLink}}" target="_blank" class="btn btn-telegram">
+                <i class="fab fa-telegram"></i>
+                打开 Telegram
+            </a>
+            <a href="/" class="btn btn-secondary">
+                <i class="fas fa-home"></i>
+                返回首页
+            </a>
+        </div>
+
+        <div class="footer-note">
+            <p>
+                <i class="fas fa-shield-alt"></i>
+                您的支付信息已加密处理，请放心使用
+            </p>
+            <p>
+                如需帮助，请联系
+                <a href="{{.botLink}}" class="telegram-bot-link" target="_blank">
+                    <i class="fab fa-telegram"></i> Telegram 客服机器人
+                </a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Theme detection
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+
+        // Confetti effect for celebration
+        function createConfetti() {
+            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+            const confettiCount = 50;
+
+            for (let i = 0; i < confettiCount; i++) {
+                const confetti = document.createElement('div');
+                confetti.style.position = 'fixed';
+                confetti.style.width = '10px';
+                confetti.style.height = '10px';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.top = '-10px';
+                confetti.style.opacity = Math.random();
+                confetti.style.transform = 'rotate(' + Math.random() * 360 + 'deg)';
+                confetti.style.transition = 'all 3s ease-out';
+                document.body.appendChild(confetti);
+
+                setTimeout(() => {
+                    confetti.style.top = '100%';
+                    confetti.style.transform = 'rotate(' + Math.random() * 720 + 'deg)';
+                    confetti.style.opacity = 0;
+                }, 100);
+
+                setTimeout(() => {
+                    confetti.remove();
+                }, 3100);
+            }
+        }
+
+        // Trigger confetti on load
+        setTimeout(createConfetti, 500);
+    </script>
+</body>
+</html>

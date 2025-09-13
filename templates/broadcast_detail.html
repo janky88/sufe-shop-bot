@@ -1,558 +1,346 @@
 <!DOCTYPE html>
-<html data-theme="light">
+<html lang="zh-CN" data-theme="light">
 <head>
-    <title>广播详情 - 商城机器人管理中心</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#ffffff">
-    <link rel="stylesheet" href="/static/css/theme.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>推送详情 - 商城机器人管理中心</title>
+    
+    <!-- Modern CSS -->
+    <link rel="stylesheet" href="/static/css/modern-theme.css?v=2">
+    <link rel="stylesheet" href="/static/css/modern-components.css?v=2">
+    <link rel="stylesheet" href="/static/css/modern-layout.css?v=2">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        /* Modern UI Base Styles with Aurora Gradient */
-        * { 
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        
-        :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --aurora-gradient: linear-gradient(
-                45deg,
-                rgba(102, 126, 234, 0.1) 0%,
-                rgba(118, 75, 162, 0.1) 25%,
-                rgba(255, 154, 139, 0.1) 50%,
-                rgba(255, 206, 84, 0.1) 75%,
-                rgba(102, 126, 234, 0.1) 100%
-            );
-        }
-        
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
-        }
-        
-        /* Aurora Background Animation */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 40% 20%, rgba(255, 154, 139, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 70% 30%, rgba(255, 206, 84, 0.2) 0%, transparent 50%);
-            animation: aurora 20s ease-in-out infinite;
-            z-index: -1;
-        }
-        
-        @keyframes aurora {
-            0%, 100% { transform: rotate(0deg) scale(1); }
-            25% { transform: rotate(5deg) scale(1.1); }
-            50% { transform: rotate(-5deg) scale(1); }
-            75% { transform: rotate(3deg) scale(1.05); }
-        }
-        
-        /* Glassmorphism Header */
-        .header {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--glass-border);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            box-shadow: 0 8px 32px var(--shadow-color);
-        }
-        
-        .header::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: var(--aurora-gradient);
-            opacity: 0.5;
-            animation: shimmer 3s ease-in-out infinite;
-        }
-        
-        @keyframes shimmer {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 0.8; }
-        }
-        
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 70px;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .logo {
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.5px;
-        }
-        
-        .logout-btn {
-            padding: 10px 24px;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
-        }
-        
-        .logout-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
-        }
-        
-        .container { 
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 24px;
-        }
-        
-        .back-link {
-            display: inline-block;
-            margin-bottom: 24px;
-            color: #667eea;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-        
-        .back-link:hover {
-            color: #764ba2;
-            transform: translateX(-4px);
-        }
-        
-        /* Glass Card */
-        .detail-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 32px;
-            box-shadow: 0 8px 32px var(--shadow-color);
-            margin-bottom: 32px;
-        }
-        
         .detail-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 32px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            margin-bottom: var(--spacing-xl);
         }
         
         .detail-title {
-            font-size: 28px;
+            font-size: 1.5rem;
             font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-md);
         }
         
-        .status-badge {
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 500;
+        .detail-meta {
+            display: flex;
+            gap: var(--spacing-xl);
+            flex-wrap: wrap;
         }
         
-        .status-pending {
-            background: rgba(255, 206, 84, 0.2);
-            color: #ffce54;
-            border: 1px solid rgba(255, 206, 84, 0.3);
-        }
-        
-        .status-sending {
-            background: rgba(143, 211, 244, 0.2);
-            color: #8fd3f4;
-            border: 1px solid rgba(143, 211, 244, 0.3);
-        }
-        
-        .status-completed {
-            background: rgba(132, 250, 176, 0.2);
-            color: #84fab0;
-            border: 1px solid rgba(132, 250, 176, 0.3);
-        }
-        
-        .status-failed {
-            background: rgba(245, 87, 108, 0.2);
-            color: #f5576c;
-            border: 1px solid rgba(245, 87, 108, 0.3);
-        }
-        
-        .detail-info {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 24px;
-            margin-bottom: 32px;
-        }
-        
-        .info-item {
+        .meta-item {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: var(--spacing-xs);
         }
         
-        .info-label {
-            font-size: 14px;
+        .meta-label {
+            font-size: 0.875rem;
             color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
         
-        .info-value {
-            font-size: 18px;
-            color: var(--text-primary);
-            font-weight: 500;
-        }
-        
-        .content-section {
-            margin-bottom: 32px;
-        }
-        
-        .content-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 16px;
-            color: var(--text-primary);
-        }
-        
-        .content-box {
-            padding: 20px;
-            background: var(--hover-bg);
-            border: 1px solid var(--glass-bg);
-            border-radius: 12px;
-            white-space: pre-wrap;
-            word-break: break-word;
-            color: var(--text-primary);
-            font-size: 14px;
-            line-height: 1.6;
-        }
-        
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 24px;
-            margin-bottom: 32px;
-        }
-        
-        .stat-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 24px;
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 40px var(--shadow-color);
-        }
-        
-        .stat-value {
-            font-size: 36px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .stat-label {
-            color: var(--text-secondary);
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .logs-section {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 32px;
-            box-shadow: 0 8px 32px var(--shadow-color);
-        }
-        
-        .logs-title {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 24px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .logs-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .logs-table th,
-        .logs-table td {
-            padding: 16px;
-            text-align: left;
-            border-bottom: 1px solid var(--hover-bg);
-        }
-        
-        .logs-table th {
+        .meta-value {
+            font-size: 1rem;
             font-weight: 600;
             color: var(--text-primary);
-            background: var(--hover-bg);
-            border-bottom: 1px solid var(--glass-border);
         }
         
-        .logs-table tr:hover {
-            background: rgba(255, 255, 255, 0.02);
-        }
-        
-        .logs-table td {
-            color: var(--text-primary);
-        }
-        
-        .log-status-sent {
-            color: #84fab0;
-        }
-        
-        .log-status-failed {
-            color: #f5576c;
+        .progress-container {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            height: 8px;
+            margin-top: var(--spacing-sm);
         }
         
         .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: var(--glass-bg);
-            border-radius: 4px;
-            overflow: hidden;
-            margin-top: 12px;
-        }
-        
-        .progress-fill {
             height: 100%;
-            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-            transition: width 0.3s;
-            position: relative;
-            overflow: hidden;
+            background: var(--success-600);
+            transition: width 0.3s ease;
         }
         
-        .progress-fill::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            right: 0;
-            background: linear-gradient(
-                90deg,
-                transparent,
-                var(--text-tertiary),
-                transparent
-            );
-            animation: progress-shimmer 2s linear infinite;
+        .message-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+            white-space: pre-wrap;
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
         }
         
-        @keyframes progress-shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
+        .log-entry {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-sm) 0;
+            border-bottom: 1px solid var(--border-color);
         }
         
-        .empty-message {
-            text-align: center;
-            color: var(--text-tertiary);
-            padding: 40px;
-            font-size: 16px;
+        .log-entry:last-child {
+            border-bottom: none;
         }
         
-        @media (max-width: 768px) {
-            .detail-header {
-                flex-direction: column;
-                gap: 16px;
-            }
-            
-            .detail-title {
-                font-size: 24px;
-            }
-            
-            .stats-row {
-                grid-template-columns: 1fr 1fr;
-            }
+        .log-status {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            font-size: 0.875rem;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .status-dot.sent {
+            background: var(--success-600);
+        }
+        
+        .status-dot.failed {
+            background: var(--danger-600);
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="header-content">
-            <div class="logo">商城机器人管理中心</div>
-            <div style="display: flex; align-items: center; gap: 16px;">
-                <button class="theme-toggle" onclick="toggleTheme()" title="切换主题 (Ctrl+Shift+T)">
-                    <span class="theme-toggle-icon sun">☀️</span>
-                    <span class="theme-toggle-icon moon">🌙</span>
-                </button>
-                <button class="logout-btn" onclick="logout()">退出登录</button>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                    商城机器人管理中心
+                </div>
+                <div class="header-actions">
+                    <button class="theme-toggle" onclick="toggleTheme()">
+                        <i class="fas fa-sun sun-icon theme-toggle-icon"></i>
+                        <i class="fas fa-moon moon-icon theme-toggle-icon"></i>
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        退出登录
+                    </button>
+                </div>
             </div>
-        </div>
+        </header>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">主要功能</div>
+                    <a href="/admin/">
+                        <i class="fas fa-tachometer-alt nav-icon"></i>
+                        仪表盘
+                    </a>
+                    <a href="/admin/products">
+                        <i class="fas fa-box nav-icon"></i>
+                        商品管理
+                    </a>
+                    <a href="/admin/orders">
+                        <i class="fas fa-shopping-cart nav-icon"></i>
+                        订单管理
+                    </a>
+                    <a href="/admin/users">
+                        <i class="fas fa-users nav-icon"></i>
+                        用户管理
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">运营工具</div>
+                    <a href="/admin/recharge-cards">
+                        <i class="fas fa-credit-card nav-icon"></i>
+                        充值卡管理
+                    </a>
+                    <a href="/admin/broadcast" class="active">
+                        <i class="fas fa-bullhorn nav-icon"></i>
+                        消息推送
+                    </a>
+                    <a href="/admin/faq">
+                        <i class="fas fa-question-circle nav-icon"></i>
+                        FAQ管理
+                    </a>
+                    <a href="/admin/templates">
+                        <i class="fas fa-file-alt nav-icon"></i>
+                        消息模板
+                    </a>
+                    <a href="/admin/tickets">
+                        <i class="fas fa-ticket-alt nav-icon"></i>
+                        工单管理
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">系统</div>
+                    <a href="/admin/settings">
+                        <i class="fas fa-cog nav-icon"></i>
+                        系统设置
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <h1 class="page-title">推送详情</h1>
+                    
+                    <div class="page-actions">
+                        <a href="/admin/broadcast" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> 返回列表
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Broadcast Details -->
+                <div class="detail-header">
+                    <h2 class="detail-title">
+                        {{if eq .broadcast.Type "announcement"}}公告通知{{end}}
+                        {{if eq .broadcast.Type "stock_update"}}上货通知{{end}}
+                        {{if eq .broadcast.Type "promotion"}}促销活动{{end}}
+                        {{if eq .broadcast.Type "custom"}}自定义消息{{end}}
+                    </h2>
+                    
+                    <div class="detail-meta">
+                        <div class="meta-item">
+                            <span class="meta-label">发送时间</span>
+                            <span class="meta-value">{{.broadcast.CreatedAt.Format "2006-01-02 15:04:05"}}</span>
+                        </div>
+                        
+                        <div class="meta-item">
+                            <span class="meta-label">目标受众</span>
+                            <span class="meta-value">
+                                {{if eq .broadcast.TargetType "all"}}所有用户和群组{{end}}
+                                {{if eq .broadcast.TargetType "users"}}仅私聊用户{{end}}
+                                {{if eq .broadcast.TargetType "groups"}}仅群组{{end}}
+                            </span>
+                        </div>
+                        
+                        <div class="meta-item">
+                            <span class="meta-label">总接收者</span>
+                            <span class="meta-value">{{.broadcast.TotalRecipients}}</span>
+                        </div>
+                        
+                        <div class="meta-item">
+                            <span class="meta-label">发送状态</span>
+                            <span class="meta-value">
+                                {{if eq .broadcast.Status "pending"}}
+                                    <span class="badge badge-warning">待发送</span>
+                                {{else if eq .broadcast.Status "sending"}}
+                                    <span class="badge badge-info">发送中</span>
+                                {{else if eq .broadcast.Status "completed"}}
+                                    <span class="badge badge-success">已完成</span>
+                                {{else if eq .broadcast.Status "failed"}}
+                                    <span class="badge badge-danger">失败</span>
+                                {{end}}
+                            </span>
+                        </div>
+                        
+                        <div class="meta-item">
+                            <span class="meta-label">成功率</span>
+                            <span class="meta-value">{{printf "%.1f" .successRate}}%</span>
+                            <div class="progress-container">
+                                <div class="progress-bar" style="width: {{.successRate}}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Message Content -->
+                <div class="content-section">
+                    <h3 class="section-title">消息内容</h3>
+                    <div class="message-content">{{.broadcast.Content}}</div>
+                </div>
+
+                <!-- Send Logs -->
+                <div class="content-section">
+                    <h3 class="section-title">发送日志</h3>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>接收者</th>
+                                    <th>类型</th>
+                                    <th>状态</th>
+                                    <th>错误信息</th>
+                                    <th>发送时间</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{range .logs}}
+                                <tr>
+                                    <td>{{.RecipientID}}</td>
+                                    <td>
+                                        {{if eq .RecipientType "user"}}
+                                            <span class="badge">用户</span>
+                                        {{else}}
+                                            <span class="badge">群组</span>
+                                        {{end}}
+                                    </td>
+                                    <td>
+                                        <div class="log-status">
+                                            {{if eq .Status "sent"}}
+                                                <span class="status-dot sent"></span>
+                                                <span class="text-success">成功</span>
+                                            {{else}}
+                                                <span class="status-dot failed"></span>
+                                                <span class="text-danger">失败</span>
+                                            {{end}}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {{if .ErrorMessage}}
+                                            <span class="text-danger">{{.ErrorMessage}}</span>
+                                        {{else}}
+                                            -
+                                        {{end}}
+                                    </td>
+                                    <td>{{.CreatedAt.Format "15:04:05"}}</td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
     
-    <div class="container">
-        <a href="/admin/broadcast" class="back-link">← 返回广播列表</a>
-        
-        <div class="detail-card">
-            <div class="detail-header">
-                <h1 class="detail-title">广播详情 #{{.broadcast.ID}}</h1>
-                <span class="status-badge status-{{.broadcast.Status}}">
-                    {{if eq .broadcast.Status "pending"}}待发送{{end}}
-                    {{if eq .broadcast.Status "sending"}}发送中{{end}}
-                    {{if eq .broadcast.Status "completed"}}已完成{{end}}
-                    {{if eq .broadcast.Status "failed"}}失败{{end}}
-                </span>
-            </div>
-            
-            <div class="detail-info">
-                <div class="info-item">
-                    <span class="info-label">消息类型</span>
-                    <span class="info-value">
-                        {{if eq .broadcast.Type "announcement"}}📢 公告通知{{end}}
-                        {{if eq .broadcast.Type "stock_update"}}📦 上货通知{{end}}
-                        {{if eq .broadcast.Type "promotion"}}🎉 促销活动{{end}}
-                    </span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">接收对象</span>
-                    <span class="info-value">
-                        {{if eq .broadcast.TargetType "all"}}所有用户和群组{{end}}
-                        {{if eq .broadcast.TargetType "users"}}仅用户{{end}}
-                        {{if eq .broadcast.TargetType "groups"}}仅群组{{end}}
-                    </span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">创建时间</span>
-                    <span class="info-value">{{.broadcast.CreatedAt.Format "2006-01-02 15:04:05"}}</span>
-                </div>
-                {{if .broadcast.StartedAt}}
-                <div class="info-item">
-                    <span class="info-label">开始时间</span>
-                    <span class="info-value">{{.broadcast.StartedAt.Format "2006-01-02 15:04:05"}}</span>
-                </div>
-                {{end}}
-                {{if .broadcast.CompletedAt}}
-                <div class="info-item">
-                    <span class="info-label">完成时间</span>
-                    <span class="info-value">{{.broadcast.CompletedAt.Format "2006-01-02 15:04:05"}}</span>
-                </div>
-                {{end}}
-            </div>
-            
-            <div class="content-section">
-                <h3 class="content-title">消息内容</h3>
-                <div class="content-box">{{.broadcast.Content}}</div>
-            </div>
-            
-            <div class="stats-row">
-                <div class="stat-card">
-                    <div class="stat-value">{{.broadcast.TotalRecipients}}</div>
-                    <div class="stat-label">总接收者</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">{{.broadcast.SentCount}}</div>
-                    <div class="stat-label">发送成功</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">{{.broadcast.FailedCount}}</div>
-                    <div class="stat-label">发送失败</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">{{printf "%.1f" .successRate}}%</div>
-                    <div class="stat-label">成功率</div>
-                </div>
-            </div>
-            
-            {{if gt .broadcast.TotalRecipients 0}}
-            <div>
-                <span style="font-size: 14px; color: #8c8c8c;">发送进度</span>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: {{.successRate}}%"></div>
-                </div>
-            </div>
-            {{end}}
-        </div>
-        
-        <div class="logs-section">
-            <h2 class="logs-title">发送日志（最近100条）</h2>
-            {{if .logs}}
-            <table class="logs-table">
-                <thead>
-                    <tr>
-                        <th>时间</th>
-                        <th>类型</th>
-                        <th>接收者ID</th>
-                        <th>状态</th>
-                        <th>错误信息</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{range .logs}}
-                    <tr>
-                        <td>{{.CreatedAt.Format "15:04:05"}}</td>
-                        <td>{{if eq .RecipientType "user"}}用户{{else}}群组{{end}}</td>
-                        <td>{{.RecipientID}}</td>
-                        <td class="log-status-{{.Status}}">
-                            {{if eq .Status "sent"}}✓ 成功{{else}}✗ 失败{{end}}
-                        </td>
-                        <td>{{if .Error}}{{.Error}}{{else}}-{{end}}</td>
-                    </tr>
-                    {{end}}
-                </tbody>
-            </table>
-            {{else}}
-            <p style="text-align: center; color: #8c8c8c; padding: 20px;">暂无发送日志</p>
-            {{end}}
-        </div>
-    </div>
-    
+    <!-- Scripts -->
     <script>
-    function logout() {
-        if (confirm('确定要退出登录吗？')) {
-            fetch('/api/logout', { method: 'POST' })
-                .then(() => window.location.href = '/login');
-        }
-    }
-    </script>
-    <script src="/static/theme.js"></script>
-    <script>
+        // Theme Toggle
         function toggleTheme() {
-            if (window.themeManager) {
-                window.themeManager.toggleTheme();
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Load saved theme
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        });
+        
+        // Logout function
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                fetch('/api/logout', { method: 'POST' })
+                    .then(() => window.location.href = '/')
+                    .catch(err => console.error('Logout failed:', err));
             }
         }
     </script>

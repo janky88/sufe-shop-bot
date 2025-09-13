@@ -1,510 +1,318 @@
 <!DOCTYPE html>
-<html data-theme="light">
+<html lang="zh-CN" data-theme="light">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>用户管理 - 商城机器人管理中心</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#ffffff">
-    <link rel="stylesheet" href="/static/css/theme.css">
+    
+    <!-- Modern CSS -->
+    <link rel="stylesheet" href="/static/css/modern-theme.css?v=1">
+    <link rel="stylesheet" href="/static/css/modern-components.css?v=1">
+    <link rel="stylesheet" href="/static/css/modern-layout.css?v=1">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                    商城机器人管理中心
+                </div>
+                <div class="header-actions">
+                    <button class="theme-toggle" onclick="toggleTheme()">
+                        <i class="fas fa-sun sun-icon theme-toggle-icon"></i>
+                        <i class="fas fa-moon moon-icon theme-toggle-icon"></i>
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        退出登录
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">主要功能</div>
+                    <a href="/admin/">
+                        <i class="fas fa-tachometer-alt nav-icon"></i>
+                        仪表盘
+                    </a>
+                    <a href="/admin/products">
+                        <i class="fas fa-box nav-icon"></i>
+                        商品管理
+                    </a>
+                    <a href="/admin/orders">
+                        <i class="fas fa-shopping-cart nav-icon"></i>
+                        订单管理
+                    </a>
+                    <a href="/admin/users" class="active">
+                        <i class="fas fa-users nav-icon"></i>
+                        用户管理
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">运营工具</div>
+                    <a href="/admin/recharge-cards">
+                        <i class="fas fa-credit-card nav-icon"></i>
+                        充值卡管理
+                    </a>
+                    <a href="/admin/broadcast">
+                        <i class="fas fa-bullhorn nav-icon"></i>
+                        消息推送
+                    </a>
+                    <a href="/admin/faq">
+                        <i class="fas fa-question-circle nav-icon"></i>
+                        FAQ管理
+                    </a>
+                    <a href="/admin/templates">
+                        <i class="fas fa-file-alt nav-icon"></i>
+                        消息模板
+                    </a>
+                    <a href="/admin/tickets">
+                        <i class="fas fa-ticket-alt nav-icon"></i>
+                        工单管理
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">系统</div>
+                    <a href="/admin/settings">
+                        <i class="fas fa-cog nav-icon"></i>
+                        系统设置
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <h1 class="page-title">用户管理</h1>
+                    <p class="page-subtitle">管理和查看所有用户信息</p>
+                </div>
+
+                <!-- Search Filters -->
+                <div class="content-section mb-4">
+                    <form method="get" action="">
+                        <div class="grid grid-cols-4 gap-4 mb-4">
+                            <div class="form-group mb-0">
+                                <label class="form-label">用户名</label>
+                                <input type="text" name="username" value="{{.username}}" placeholder="搜索用户名" class="form-control">
+                            </div>
+                            
+                            <div class="form-group mb-0">
+                                <label class="form-label">Telegram ID</label>
+                                <input type="text" name="tg_id" value="{{.tg_id}}" placeholder="搜索Telegram ID" class="form-control">
+                            </div>
+                            
+                            <div class="form-group mb-0">
+                                <label class="form-label">排序</label>
+                                <select name="sort" class="form-control form-select">
+                                    <option value="created_desc" {{if eq .sort "created_desc"}}selected{{end}}>注册时间 (最新)</option>
+                                    <option value="created_asc" {{if eq .sort "created_asc"}}selected{{end}}>注册时间 (最早)</option>
+                                    <option value="balance_desc" {{if eq .sort "balance_desc"}}selected{{end}}>余额 (最高)</option>
+                                    <option value="balance_asc" {{if eq .sort "balance_asc"}}selected{{end}}>余额 (最低)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group mb-0 flex items-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search"></i>
+                                    搜索
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Users Table -->
+                <div class="content-section">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>用户信息</th>
+                                    <th>Telegram ID</th>
+                                    <th>余额</th>
+                                    <th>订单数</th>
+                                    <th>注册时间</th>
+                                    <th>最后活跃</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{range .users}}
+                                <tr>
+                                    <td>
+                                        <div class="user-info">
+                                            <div class="font-medium">{{.Username}}</div>
+                                            <div class="text-xs text-muted">ID: {{.ID}}</div>
+                                        </div>
+                                    </td>
+                                    <td>{{.TgUserID}}</td>
+                                    <td class="font-semibold text-primary-600">{{$.currency}}{{printf "%.2f" (divf .BalanceCents 100)}}</td>
+                                    <td>
+                                        <span class="badge badge-info">{{.OrderCount}} 订单</span>
+                                    </td>
+                                    <td class="text-sm">{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+                                    <td class="text-sm">{{.UpdatedAt.Format "2006-01-02 15:04"}}</td>
+                                    <td>
+                                        <a href="/admin/users/{{.ID}}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-eye"></i>
+                                            查看详情
+                                        </a>
+                                    </td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="pagination-container">
+                        {{$page := .page}}
+                        {{$totalPages := divf .total .limit | addf 0.999 | int}}
+                        
+                        <div class="pagination">
+                            {{if gt $page 1}}
+                                <a href="?page={{subf $page 1}}&username={{.username}}&tg_id={{.tg_id}}&sort={{.sort}}" class="pagination-btn">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            {{end}}
+                            
+                            {{if gt $totalPages 1}}
+                                {{range $i := seq 1 $totalPages}}
+                                    {{if and (or (le $i 3) (ge $i (subf $totalPages 2))) (or (and (ge $i (subf $page 2)) (le $i (addf $page 2))) (or (le $page 3) (ge $page (subf $totalPages 2))))}}
+                                        {{if eq $i $page}}
+                                            <a href="?page={{$i}}&username={{$.username}}&tg_id={{$.tg_id}}&sort={{$.sort}}" class="pagination-btn active">{{$i}}</a>
+                                        {{else}}
+                                            <a href="?page={{$i}}&username={{$.username}}&tg_id={{$.tg_id}}&sort={{$.sort}}" class="pagination-btn">{{$i}}</a>
+                                        {{end}}
+                                    {{else if or (eq $i 4) (eq $i (subf $totalPages 3))}}
+                                        {{if and (gt $page 5) (lt $page (subf $totalPages 4))}}
+                                            <span class="pagination-ellipsis">...</span>
+                                        {{end}}
+                                    {{end}}
+                                {{end}}
+                            {{end}}
+                            
+                            {{if lt $page $totalPages}}
+                                <a href="?page={{addf $page 1}}&username={{.username}}&tg_id={{.tg_id}}&sort={{.sort}}" class="pagination-btn">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            {{end}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
     <style>
-        /* Modern UI Base Styles with Aurora Gradient */
-        * { 
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        
-        :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --aurora-gradient: linear-gradient(
-                45deg,
-                rgba(102, 126, 234, 0.1) 0%,
-                rgba(118, 75, 162, 0.1) 25%,
-                rgba(255, 154, 139, 0.1) 50%,
-                rgba(255, 206, 84, 0.1) 75%,
-                rgba(102, 126, 234, 0.1) 100%
-            );
-        }
-        
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
-        }
-        
-        /* Aurora Background Animation */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 40% 20%, rgba(255, 154, 139, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 70% 30%, rgba(255, 206, 84, 0.2) 0%, transparent 50%);
-            animation: aurora 20s ease-in-out infinite;
-            z-index: -1;
-        }
-        
-        @keyframes aurora {
-            0%, 100% { transform: rotate(0deg) scale(1); }
-            25% { transform: rotate(5deg) scale(1.1); }
-            50% { transform: rotate(-5deg) scale(1); }
-            75% { transform: rotate(3deg) scale(1.05); }
-        }
-        
-        /* Glassmorphism Header */
-        .header {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--glass-border);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            box-shadow: 0 8px 32px var(--shadow-color);
-        }
-        
-        .header::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: var(--aurora-gradient);
-            opacity: 0.5;
-            animation: shimmer 3s ease-in-out infinite;
-        }
-        
-        @keyframes shimmer {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 0.8; }
-        }
-        
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 70px;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .logo {
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.5px;
-        }
-        
-        .logout-btn {
-            padding: 10px 24px;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
-        }
-        
-        .logout-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
-        }
-        
-        .container { 
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 24px;
-        }
-        
-        /* Glass Navigation */
-        .nav { 
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 8px;
-            margin-bottom: 24px;
-            box-shadow: 0 8px 32px var(--shadow-color);
-            display: flex;
-            gap: 8px;
+        /* Table Responsive */
+        .table-responsive {
             overflow-x: auto;
-            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
         }
-        
-        .nav::-webkit-scrollbar {
-            display: none;
-        }
-        
-        .nav a { 
-            flex: 0 0 auto;
-            padding: 12px 24px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            text-align: center;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            white-space: nowrap;
-        }
-        
-        .nav a:hover { 
-            background: var(--glass-bg);
-            color: var(--text-primary);
-        }
-        
-        .nav a.active {
-            background: var(--primary-gradient);
-            color: white;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        }
-        
-        /* Page Title */
-        .page-title {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 32px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        /* Filters Section */
-        .filters {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 8px 32px var(--shadow-color);
-        }
-        
-        .filters form {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-            align-items: flex-end;
-        }
-        
-        .form-group {
-            flex: 1;
-            min-width: 200px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-        
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 10px 16px;
-            background: var(--hover-bg);
-            border: 1px solid var(--glass-bg);
-            border-radius: 12px;
-            color: var(--text-primary);
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-        
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            background: rgba(255, 255, 255, 0.08);
-        }
-        
-        .form-group select option {
-            background: #1a1a2e;
-        }
-        
-        .btn {
-            padding: 10px 24px;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
-        
-        /* Table Container */
-        .table-container {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 8px 32px var(--shadow-color);
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        th {
-            background: var(--hover-bg);
-            padding: 16px;
-            text-align: left;
-            font-weight: 600;
-            color: var(--text-primary);
-            border-bottom: 1px solid var(--glass-border);
-        }
-        
-        td {
-            padding: 16px;
-            border-bottom: 1px solid var(--hover-bg);
-            color: var(--text-primary);
-        }
-        
-        tr:hover {
-            background: rgba(255, 255, 255, 0.02);
-        }
-        
+
         /* User Info */
-        .user-name {
-            font-weight: 500;
-            color: var(--text-primary);
+        .user-info {
+            min-width: 150px;
         }
-        
-        .user-id {
-            font-size: 12px;
-            color: var(--text-tertiary);
-            margin-top: 4px;
-        }
-        
-        .balance {
-            font-weight: 600;
-            color: #84fab0;
-        }
-        
-        .order-count {
-            color: var(--text-secondary);
-        }
-        
-        .btn-detail {
-            padding: 6px 16px;
-            font-size: 12px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            display: inline-block;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-        }
-        
-        .btn-detail:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-        
+
         /* Pagination */
-        .pagination {
-            margin-top: 24px;
+        .pagination-container {
+            margin-top: var(--spacing-lg);
             display: flex;
             justify-content: center;
-            gap: 8px;
+        }
+
+        .pagination {
+            display: flex;
             align-items: center;
+            gap: var(--spacing-xs);
         }
-        
-        .pagination a {
-            padding: 8px 16px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
+
+        .pagination-btn {
+            min-width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 var(--spacing-sm);
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
             color: var(--text-secondary);
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            transition: all var(--transition-fast);
             text-decoration: none;
-            transition: all 0.3s ease;
         }
-        
-        .pagination a:hover {
-            background: var(--glass-bg);
+
+        .pagination-btn:hover {
+            background: var(--bg-secondary);
+            border-color: var(--border-hover);
             color: var(--text-primary);
         }
-        
-        .pagination a.active {
-            background: var(--primary-gradient);
-            color: var(--text-primary);
-            border-color: transparent;
+
+        .pagination-btn.active {
+            background: var(--primary-600);
+            border-color: var(--primary-600);
+            color: white;
         }
-        
+
+        .pagination-ellipsis {
+            padding: 0 var(--spacing-sm);
+            color: var(--text-tertiary);
+        }
+
         /* Responsive */
-        @media (max-width: 768px) {
-            .page-title {
-                font-size: 24px;
+        @media (max-width: 1024px) {
+            .grid-cols-4 {
+                grid-template-columns: 1fr 1fr;
             }
-            
-            .filters form {
-                flex-direction: column;
-            }
-            
-            .form-group {
-                width: 100%;
+        }
+
+        @media (max-width: 640px) {
+            .grid-cols-4 {
+                grid-template-columns: 1fr;
             }
         }
     </style>
+
+    <!-- Scripts -->
     <script>
-    function logout() {
-        fetch('/api/logout', { method: 'POST' })
-            .then(() => window.location.href = '/')
-            .catch(err => console.error('Logout failed:', err));
-    }
-    </script>
-</head>
-<body>
-    <div class="header">
-        <div class="header-content">
-            <div class="logo">商城机器人管理中心</div>
-            <div style="display: flex; align-items: center; gap: 16px;">
-                <button class="theme-toggle" onclick="toggleTheme()" title="切换主题 (Ctrl+Shift+T)">
-                    <span class="theme-toggle-icon sun">☀️</span>
-                    <span class="theme-toggle-icon moon">🌙</span>
-                </button>
-                <button class="logout-btn" onclick="logout()">退出登录</button>
-            </div>
-        </div>
-    </div>
-    
-    <div class="container">
-        <div class="nav">
-            <a href="/admin/">仪表盘</a>
-            <a href="/admin/products">商品管理</a>
-            <a href="/admin/orders">订单管理</a>
-            <a href="/admin/users" class="active">用户管理</a>
-            <a href="/admin/recharge-cards">充值卡管理</a>
-            <a href="/admin/broadcast">消息推送</a>
-            <a href="/admin/faq">FAQ管理</a>
-            <a href="/admin/templates">消息模板</a>
-            <a href="/admin/settings">系统设置</a>
-        </div>
-        
-        <h1 class="page-title">用户管理</h1>
-        
-        <div class="filters">
-            <form method="get" action="">
-                <div class="form-group">
-                    <label>用户名</label>
-                    <input type="text" name="username" value="{{.username}}" placeholder="搜索用户名">
-                </div>
-                <div class="form-group">
-                    <label>Telegram ID</label>
-                    <input type="text" name="tg_id" value="{{.tg_id}}" placeholder="搜索Telegram ID">
-                </div>
-                <div class="form-group">
-                    <label>排序</label>
-                    <select name="sort">
-                        <option value="created_desc" {{if eq .sort "created_desc"}}selected{{end}}>注册时间 (最新)</option>
-                        <option value="created_asc" {{if eq .sort "created_asc"}}selected{{end}}>注册时间 (最早)</option>
-                        <option value="balance_desc" {{if eq .sort "balance_desc"}}selected{{end}}>余额 (最高)</option>
-                        <option value="balance_asc" {{if eq .sort "balance_asc"}}selected{{end}}>余额 (最低)</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn">搜索</button>
-            </form>
-        </div>
-        
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>用户信息</th>
-                        <th>Telegram ID</th>
-                        <th>余额</th>
-                        <th>订单数</th>
-                        <th>注册时间</th>
-                        <th>最后活跃</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{range .users}}
-                    <tr>
-                        <td>
-                            <div class="user-name">{{.Username}}</div>
-                            <div class="user-id">ID: {{.ID}}</div>
-                        </td>
-                        <td>{{.TgUserID}}</td>
-                        <td class="balance">{{$.currency}}{{printf "%.2f" (divf .BalanceCents 100)}}</td>
-                        <td class="order-count">{{.OrderCount}}</td>
-                        <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
-                        <td>{{.UpdatedAt.Format "2006-01-02 15:04"}}</td>
-                        <td>
-                            <a href="/admin/users/{{.ID}}" class="btn-detail">查看详情</a>
-                        </td>
-                    </tr>
-                    {{end}}
-                </tbody>
-            </table>
-        </div>
-        
-        <div class="pagination">
-            {{$page := .page}}
-            {{$totalPages := divf .total .limit | addf 0.999 | int}}
-            
-            {{if gt $page 1}}
-                <a href="?page={{subf $page 1}}&username={{.username}}&tg_id={{.tg_id}}&sort={{.sort}}">上一页</a>
-            {{end}}
-            
-            {{if gt $totalPages 1}}
-                {{range $i := seq 1 $totalPages}}
-                    {{if and (or (le $i 3) (ge $i (subf $totalPages 2))) (or (and (ge $i (subf $page 2)) (le $i (addf $page 2))) (or (le $page 3) (ge $page (subf $totalPages 2))))}}
-                        {{if eq $i $page}}
-                            <a href="?page={{$i}}&username={{$.username}}&tg_id={{$.tg_id}}&sort={{$.sort}}" class="active">{{$i}}</a>
-                        {{else}}
-                            <a href="?page={{$i}}&username={{$.username}}&tg_id={{$.tg_id}}&sort={{$.sort}}">{{$i}}</a>
-                        {{end}}
-                    {{else if or (eq $i 4) (eq $i (subf $totalPages 3))}}
-                        {{if and (gt $page 5) (lt $page (subf $totalPages 4))}}
-                            <span>...</span>
-                        {{end}}
-                    {{end}}
-                {{end}}
-            {{end}}
-            
-            {{if lt $page $totalPages}}
-                <a href="?page={{addf $page 1}}&username={{.username}}&tg_id={{.tg_id}}&sort={{.sort}}">下一页</a>
-            {{end}}
-        </div>
-    </div>
-    <script src="/static/theme.js"></script>
-    <script>
+        // Theme Toggle
         function toggleTheme() {
-            if (window.themeManager) {
-                window.themeManager.toggleTheme();
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Load saved theme
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        });
+
+        // Logout function
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                fetch('/api/logout', { method: 'POST' })
+                    .then(() => window.location.href = '/')
+                    .catch(err => console.error('Logout failed:', err));
             }
         }
     </script>

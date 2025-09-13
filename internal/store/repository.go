@@ -132,7 +132,7 @@ func GetOrCreateUser(db *gorm.DB, tgUserID int64, username string) (*User, error
 	user = User{
 		TgUserID: tgUserID,
 		Username: username,
-		Language: "", // Empty by default, will be detected on first interaction
+		Language: "en",
 	}
 	
 	if err := db.Create(&user).Error; err != nil {
@@ -140,6 +140,33 @@ func GetOrCreateUser(db *gorm.DB, tgUserID int64, username string) (*User, error
 	}
 	
 	return &user, nil
+}
+
+// GetOrCreateUserWithStatus gets existing user or creates new one, returning if user was created
+func GetOrCreateUserWithStatus(db *gorm.DB, tgUserID int64, username string) (*User, bool, error) {
+	var user User
+	
+	err := db.Where("tg_user_id = ?", tgUserID).First(&user).Error
+	if err == nil {
+		return &user, false, nil
+	}
+	
+	if err != gorm.ErrRecordNotFound {
+		return nil, false, err
+	}
+	
+	// Create new user
+	user = User{
+		TgUserID: tgUserID,
+		Username: username,
+		Language: "en",
+	}
+	
+	if err := db.Create(&user).Error; err != nil {
+		return nil, false, err
+	}
+	
+	return &user, true, nil
 }
 
 // CreateOrder creates a new order

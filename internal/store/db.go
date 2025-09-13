@@ -55,6 +55,10 @@ func AutoMigrate(db *gorm.DB) error {
 		&BroadcastLog{},
 		&SystemSetting{},
 		&FAQ{},
+		&AdminUser{},
+		&Ticket{}, // Ticket must be created before TicketMessage
+		&TicketMessage{},
+		&TicketTemplate{},
 	)
 }
 

@@ -39,14 +39,16 @@ func (s *Server) handleBroadcastList(c *gin.Context) {
 	
 	// Get statistics
 	var stats struct {
-		TotalUsers  int64
-		TotalGroups int64
+		TotalUsers   int64
+		TotalGroups  int64
+		ActiveGroups int64
 	}
 	s.db.Model(&store.User{}).Count(&stats.TotalUsers)
 	s.db.Model(&store.Group{}).Where("is_active = ?", true).Count(&stats.TotalGroups)
+	stats.ActiveGroups = stats.TotalGroups // For now, active groups equals total active groups
 	
-	// HTML response
-	c.HTML(http.StatusOK, "broadcast_list.html", gin.H{
+	// HTML response - use broadcast.html which includes the send form
+	c.HTML(http.StatusOK, "broadcast.html", gin.H{
 		"broadcasts": broadcasts,
 		"total":      total,
 		"page":       page,
@@ -103,6 +105,56 @@ func (s *Server) handleBroadcastCreate(c *gin.Context) {
 	}
 	
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "广播消息已发送"})
+}
+
+// handleBroadcastSend handles AJAX broadcast send requests
+func (s *Server) handleBroadcastSend(c *gin.Context) {
+	var req struct {
+		Type            string `json:"type" binding:"required"`
+		Content         string `json:"content" binding:"required"`
+		TargetType      string `json:"target_type" binding:"required"`
+		IncludeProducts bool   `json:"include_products"`
+	}
+	
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	
+	// Get current admin user ID from session/auth context
+	adminUserID := uint(1) // Default to system user
+	
+	// Check if broadcast service is available
+	if s.broadcast == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Broadcast service not available"})
+		return
+	}
+	
+	// If include products is enabled, send broadcast with product list
+	if req.IncludeProducts {
+		err := s.sendBroadcastWithProducts(c.Request.Context(), req.Type, req.Content, req.TargetType, adminUserID)
+		if err != nil {
+			logger.Error("Failed to send broadcast with products", "error", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send broadcast: " + err.Error()})
+			return
+		}
+	} else {
+		// Send regular broadcast
+		err := s.broadcast.SendBroadcast(c.Request.Context(), broadcast.BroadcastOptions{
+			Type:       req.Type,
+			Content:    req.Content,
+			TargetType: req.TargetType,
+			CreatedBy:  adminUserID,
+		})
+		
+		if err != nil {
+			logger.Error("Failed to create broadcast", "error", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create broadcast: " + err.Error()})
+			return
+		}
+	}
+	
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "消息推��成功！"})
 }
 
 // handleBroadcastDetail shows broadcast details

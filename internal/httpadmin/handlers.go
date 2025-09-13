@@ -18,7 +18,17 @@ import (
 
 func (s *Server) handleProductList(c *gin.Context) {
 	var products []store.Product
-	if err := s.db.Find(&products).Error; err != nil {
+
+	// Check if we should show all products including inactive ones
+	showAll := c.Query("show_all") == "true"
+
+	query := s.db
+	if !showAll {
+		// By default, only show active products
+		query = query.Where("is_active = ?", true)
+	}
+
+	if err := query.Find(&products).Error; err != nil {
 		logger.Error("Failed to fetch products", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -90,10 +100,11 @@ func (s *Server) handleProductList(c *gin.Context) {
 	}
 	
 	// HTML response
-	
+
 	c.HTML(http.StatusOK, "product_list.html", gin.H{
 		"products": productsWithStock,
 		"currency": symbol,
+		"show_all": showAll,
 	})
 }
 
@@ -189,6 +200,83 @@ func (s *Server) handleProductDelete(c *gin.Context) {
 	}
 	
 	c.JSON(http.StatusOK, gin.H{"message": "deactivated"})
+}
+
+// Product restore handler
+func (s *Server) handleProductRestore(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	// Restore - reactivate the product
+	if err := s.db.Model(&store.Product{}).Where("id = ?", id).Update("is_active", true).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "restored"})
+}
+
+// Product permanent delete handler
+func (s *Server) handleProductPermanentDelete(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	// First check if product exists and is inactive
+	var product store.Product
+	if err := s.db.First(&product, id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	// Only allow permanent deletion of inactive products
+	if product.IsActive {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "cannot permanently delete active product"})
+		return
+	}
+
+	// Check if there are related orders
+	var orderCount int64
+	s.db.Model(&store.Order{}).Where("product_id = ?", id).Count(&orderCount)
+	if orderCount > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("cannot delete product: %d related orders exist", orderCount)})
+		return
+	}
+
+	// Check if there are related codes
+	var codeCount int64
+	s.db.Model(&store.Code{}).Where("product_id = ?", id).Count(&codeCount)
+	if codeCount > 0 {
+		// Delete related codes first
+		if err := s.db.Where("product_id = ?", id).Delete(&store.Code{}).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete related codes: " + err.Error()})
+			return
+		}
+		logger.Info("Deleted related codes", "product_id", id, "count", codeCount)
+	}
+
+	// Hard delete - permanently remove from database
+	if err := s.db.Delete(&store.Product{}, id).Error; err != nil {
+		// Check if it's a foreign key constraint error
+		if strings.Contains(err.Error(), "foreign key constraint") {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "cannot delete product: it has related records in other tables"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	logger.Info("Product permanently deleted", "product_id", id, "product_name", product.Name)
+	c.JSON(http.StatusOK, gin.H{"message": "permanently deleted"})
 }
 
 // Inventory endpoints
@@ -555,16 +643,16 @@ func (s *Server) handleAdminDashboard(c *gin.Context) {
 		TotalCodes      int64
 		AvailableCodes  int64
 	}
-	
+
 	s.db.Model(&store.Product{}).Count(&stats.TotalProducts)
 	s.db.Model(&store.Order{}).Count(&stats.TotalOrders)
 	s.db.Model(&store.User{}).Count(&stats.TotalUsers)
 	s.db.Model(&store.Order{}).Where("status = ?", "pending").Count(&stats.PendingOrders)
-	
+
 	// Today's stats
 	today := time.Now().Truncate(24 * time.Hour)
 	s.db.Model(&store.Order{}).Where("created_at >= ?", today).Count(&stats.TodayOrders)
-	
+
 	var todayRevenue struct {
 		Total int64
 	}
@@ -573,7 +661,7 @@ func (s *Server) handleAdminDashboard(c *gin.Context) {
 		Where("status IN (?, ?) AND paid_at >= ?", "paid", "delivered", today).
 		Scan(&todayRevenue)
 	stats.TodayRevenue = todayRevenue.Total
-	
+
 	// Total revenue
 	var totalRevenue struct {
 		Total int64
@@ -583,34 +671,97 @@ func (s *Server) handleAdminDashboard(c *gin.Context) {
 		Where("status IN (?, ?)", "paid", "delivered").
 		Scan(&totalRevenue)
 	stats.TotalRevenue = totalRevenue.Total
-	
+
 	// Code stats
 	s.db.Model(&store.Code{}).Count(&stats.TotalCodes)
 	s.db.Model(&store.Code{}).Where("is_sold = ?", false).Count(&stats.AvailableCodes)
-	
+
+	// Get sales data for last 7 days
+	salesData := make([]struct {
+		Date   string
+		Amount int64
+		Count  int64
+	}, 7)
+
+	for i := 0; i < 7; i++ {
+		date := time.Now().AddDate(0, 0, -i).Truncate(24 * time.Hour)
+		nextDate := date.AddDate(0, 0, 1)
+
+		var dailyStats struct {
+			Amount int64
+			Count  int64
+		}
+
+		s.db.Model(&store.Order{}).
+			Select("COALESCE(SUM(amount_cents), 0) as amount, COUNT(*) as count").
+			Where("status IN (?, ?) AND paid_at >= ? AND paid_at < ?", "paid", "delivered", date, nextDate).
+			Scan(&dailyStats)
+
+		salesData[6-i] = struct {
+			Date   string
+			Amount int64
+			Count  int64
+		}{
+			Date:   date.Format("01-02"),
+			Amount: dailyStats.Amount,
+			Count:  dailyStats.Count,
+		}
+	}
+
+	// Get order status distribution
+	var orderStatus []struct {
+		Status string
+		Count  int64
+	}
+	s.db.Model(&store.Order{}).
+		Select("status, COUNT(*) as count").
+		Group("status").
+		Scan(&orderStatus)
+
+	// Get top selling products
+	var topProducts []struct {
+		ProductID   uint
+		ProductName string
+		Count       int64
+	}
+	s.db.Table("orders").
+		Select("product_id, products.name as product_name, COUNT(*) as count").
+		Joins("LEFT JOIN products ON products.id = orders.product_id").
+		Where("orders.status IN (?, ?) AND orders.product_id IS NOT NULL", "paid", "delivered").
+		Group("product_id, products.name").
+		Order("count DESC").
+		Limit(5).
+		Scan(&topProducts)
+
 	// Recent orders
 	var recentOrders []store.Order
 	s.db.Preload("User").Preload("Product").
 		Order("created_at DESC").
 		Limit(10).
 		Find(&recentOrders)
-	
+
 	if c.GetHeader("Accept") == "application/json" {
 		c.JSON(http.StatusOK, gin.H{
 			"stats":         stats,
 			"recent_orders": recentOrders,
+			"sales_data":    salesData,
+			"order_status":  orderStatus,
+			"top_products":  topProducts,
 		})
 		return
 	}
-	
+
 	// Get currency settings
 	_, symbol := store.GetCurrencySettings(s.db, s.config)
-	
+
 	// HTML response
 	c.HTML(http.StatusOK, "dashboard.html", gin.H{
 		"stats":         stats,
 		"recent_orders": recentOrders,
 		"currency":      symbol,
+		"sales_data":    salesData,
+		"order_status":  orderStatus,
+		"top_products":  topProducts,
 	})
 }
 
@@ -877,27 +1028,30 @@ func (s *Server) handleFAQCreate(c *gin.Context) {
 		Answer    string `form:"answer" binding:"required"`
 		Language  string `form:"language" binding:"required"`
 		SortOrder int    `form:"sort_order"`
-		IsActive  bool   `form:"is_active"`
+		IsActive  string `form:"is_active"`
 	}
-	
+
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
+	// Handle checkbox value conversion
+	isActive := req.IsActive == "on" || req.IsActive == "true"
+
 	faq := store.FAQ{
 		Question:  req.Question,
 		Answer:    req.Answer,
 		Language:  req.Language,
 		SortOrder: req.SortOrder,
-		IsActive:  req.IsActive,
+		IsActive:  isActive,
 	}
-	
+
 	if err := s.db.Create(&faq).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{"success": true, "id": faq.ID})
 }
 
@@ -919,19 +1073,22 @@ func (s *Server) handleFAQUpdate(c *gin.Context) {
 		Answer    string `form:"answer" binding:"required"`
 		Language  string `form:"language" binding:"required"`
 		SortOrder int    `form:"sort_order"`
-		IsActive  bool   `form:"is_active"`
+		IsActive  string `form:"is_active"`
 	}
-	
+
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	
+
+	// Handle checkbox value conversion
+	isActive := req.IsActive == "on" || req.IsActive == "true"
+
 	faq.Question = req.Question
 	faq.Answer = req.Answer
 	faq.Language = req.Language
 	faq.SortOrder = req.SortOrder
-	faq.IsActive = req.IsActive
+	faq.IsActive = isActive
 	
 	if err := s.db.Save(&faq).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

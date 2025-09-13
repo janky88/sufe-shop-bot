@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工单详情 - {{.ticket.TicketID}} - 商城机器人管理中心</title>
+    
+    <!-- Modern CSS -->
+    <link rel="stylesheet" href="/static/css/modern-theme.css?v=2">
+    <link rel="stylesheet" href="/static/css/modern-components.css?v=2">
+    <link rel="stylesheet" href="/static/css/modern-layout.css?v=2">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        .ticket-header {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .ticket-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-lg);
+            margin-top: var(--spacing-lg);
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xs);
+        }
+        
+        .info-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        .info-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .conversation-container {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            margin-bottom: var(--spacing-xl);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .message {
+            margin-bottom: var(--spacing-lg);
+            display: flex;
+            gap: var(--spacing-md);
+        }
+        
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-100);
+            color: var(--primary-700);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        
+        .message.admin .message-avatar {
+            background: var(--success-100);
+            color: var(--success-700);
+        }
+        
+        .message.system .message-avatar {
+            background: var(--gray-100);
+            color: var(--gray-700);
+        }
+        
+        .message-content {
+            flex: 1;
+        }
+        
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .message-sender {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .message-time {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+        
+        .message-text {
+            background: var(--bg-secondary);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .message.admin .message-text {
+            background: var(--success-50);
+        }
+        
+        .message.system .message-text {
+            background: var(--gray-50);
+            font-style: italic;
+        }
+        
+        .reply-section {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            margin-top: var(--spacing-xl);
+            box-shadow: var(--shadow-md);
+        }
+
+        .reply-section h3 {
+            margin-bottom: var(--spacing-lg);
+            color: var(--text-primary);
+            font-size: 1.25rem;
+        }
+        
+        .reply-textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: var(--spacing-md);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-family: inherit;
+            font-size: 1rem;
+            resize: vertical;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+        
+        .reply-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: var(--spacing-md);
+            gap: var(--spacing-md);
+            flex-wrap: wrap;
+        }
+        
+        .template-select {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            min-width: 200px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: var(--spacing-md);
+            flex-wrap: wrap;
+        }
+        
+        .status-select, .admin-select {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+        
+        .ticket-actions {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xl);
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                    商城机器人管理中心
+                </div>
+                <div class="header-actions">
+                    <button class="theme-toggle" onclick="toggleTheme()">
+                        <i class="fas fa-sun sun-icon theme-toggle-icon"></i>
+                        <i class="fas fa-moon moon-icon theme-toggle-icon"></i>
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        退出登录
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">主要功能</div>
+                    <a href="/admin/">
+                        <i class="fas fa-tachometer-alt nav-icon"></i>
+                        仪表盘
+                    </a>
+                    <a href="/admin/products">
+                        <i class="fas fa-box nav-icon"></i>
+                        商品管理
+                    </a>
+                    <a href="/admin/orders">
+                        <i class="fas fa-shopping-cart nav-icon"></i>
+                        订单管理
+                    </a>
+                    <a href="/admin/users">
+                        <i class="fas fa-users nav-icon"></i>
+                        用户管理
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">运营工具</div>
+                    <a href="/admin/recharge-cards">
+                        <i class="fas fa-credit-card nav-icon"></i>
+                        充值卡管理
+                    </a>
+                    <a href="/admin/broadcast">
+                        <i class="fas fa-bullhorn nav-icon"></i>
+                        消息推送
+                    </a>
+                    <a href="/admin/faq">
+                        <i class="fas fa-question-circle nav-icon"></i>
+                        FAQ管理
+                    </a>
+                    <a href="/admin/templates">
+                        <i class="fas fa-file-alt nav-icon"></i>
+                        消息模板
+                    </a>
+                    <a href="/admin/tickets" class="active">
+                        <i class="fas fa-ticket-alt nav-icon"></i>
+                        工单管理
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">系统</div>
+                    <a href="/admin/settings">
+                        <i class="fas fa-cog nav-icon"></i>
+                        系统设置
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <h1 class="page-title">工单详情: {{.ticket.TicketID}}</h1>
+                    
+                    <div class="page-actions">
+                        <a href="/admin/tickets" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> 返回列表
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="ticket-actions">
+                    <select class="status-select" onchange="updateStatus(this.value)">
+                        <option value="open" {{if eq .ticket.Status "open"}}selected{{end}}>待处理</option>
+                        <option value="in_progress" {{if eq .ticket.Status "in_progress"}}selected{{end}}>处理中</option>
+                        <option value="resolved" {{if eq .ticket.Status "resolved"}}selected{{end}}>已解决</option>
+                        <option value="closed" {{if eq .ticket.Status "closed"}}selected{{end}}>已关闭</option>
+                    </select>
+
+                    <select class="admin-select" onchange="assignTicket(this.value)">
+                        <option value="">分配给...</option>
+                        {{range .admins}}
+                        <option value="{{.ID}}">{{.Username}}</option>
+                        {{end}}
+                    </select>
+
+                    {{if ne .ticket.Status "closed"}}
+                    <button class="btn btn-secondary" onclick="closeTicket()">
+                        <i class="fas fa-times-circle"></i> 关闭工单
+                    </button>
+                    {{end}}
+                </div>
+
+                <!-- Ticket Header -->
+                <div class="ticket-header">
+                    <h2>{{.ticket.Subject}}</h2>
+                    
+                    <div class="ticket-info">
+                        <div class="info-item">
+                            <span class="info-label">用户</span>
+                            <span class="info-value">{{.ticket.Username}} ({{.ticket.UserID}})</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">状态</span>
+                            <span class="info-value">
+                                <span class="status-badge {{.ticket.Status}}">
+                                    {{if eq .ticket.Status "open"}}待处理{{end}}
+                                    {{if eq .ticket.Status "in_progress"}}处理中{{end}}
+                                    {{if eq .ticket.Status "resolved"}}已解决{{end}}
+                                    {{if eq .ticket.Status "closed"}}已关闭{{end}}
+                                </span>
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">优先级</span>
+                            <span class="info-value">
+                                <span class="priority-badge {{.ticket.Priority}}">
+                                    {{if eq .ticket.Priority "urgent"}}紧急{{end}}
+                                    {{if eq .ticket.Priority "high"}}高{{end}}
+                                    {{if eq .ticket.Priority "normal"}}普通{{end}}
+                                    {{if eq .ticket.Priority "low"}}低{{end}}
+                                </span>
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">分类</span>
+                            <span class="info-value">{{.ticket.Category}}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">创建时间</span>
+                            <span class="info-value">{{.ticket.CreatedAt.Format "2006-01-02 15:04:05"}}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">分配给</span>
+                            <span class="info-value">
+                                {{if .ticket.AssignedBy}}
+                                    {{.ticket.AssignedBy.Username}}
+                                {{else}}
+                                    未分配
+                                {{end}}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conversation -->
+                <div class="conversation-container" id="conversationContainer">
+                    {{range .ticket.Messages}}
+                    <div class="message {{.SenderType}}">
+                        <div class="message-avatar">
+                            {{if eq .SenderType "user"}}
+                                <i class="fas fa-user"></i>
+                            {{else if eq .SenderType "admin"}}
+                                <i class="fas fa-user-shield"></i>
+                            {{else}}
+                                <i class="fas fa-cog"></i>
+                            {{end}}
+                        </div>
+                        <div class="message-content">
+                            <div class="message-header">
+                                <span class="message-sender">{{.SenderName}}</span>
+                                <span class="message-time">{{.CreatedAt.Format "2006-01-02 15:04:05"}}</span>
+                            </div>
+                            <div class="message-text">{{.Content}}</div>
+                        </div>
+                    </div>
+                    {{end}}
+                </div>
+
+                <!-- Reply Section -->
+                <div class="reply-section">
+                    <h3>回复工单</h3>
+                    
+                    <form id="replyForm" onsubmit="sendReply(event)">
+                        <textarea class="reply-textarea" id="replyContent" placeholder="输入回复内容..." required></textarea>
+
+                        <div class="reply-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> 发送回复
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Scripts -->
+    <script>
+        const ticketId = "{{.ticket.ID}}";
+        
+        // Theme Toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Load saved theme
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            
+            // Scroll to bottom of conversation
+            const container = document.getElementById('conversationContainer');
+            container.scrollTop = container.scrollHeight;
+            
+            // Auto-refresh every 10 seconds to check for new messages
+            setInterval(() => {
+                window.location.reload();
+            }, 10000);
+        });
+        
+        // Logout function
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                fetch('/api/logout', { method: 'POST' })
+                    .then(() => window.location.href = '/')
+                    .catch(err => console.error('Logout failed:', err));
+            }
+        }
+        
+        // Send reply
+        function sendReply(event) {
+            event.preventDefault();
+            
+            const content = document.getElementById('replyContent').value;
+            
+            fetch(`/admin/tickets/${ticketId}/reply`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ content })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('发送失败: ' + (data.error || '未知错误'));
+                }
+            })
+            .catch(err => {
+                alert('发送失败: ' + err.message);
+            });
+        }
+
+        // Close ticket
+        function closeTicket() {
+            if (confirm('确定要关闭此工单吗？关闭后仍可重新打开。')) {
+                updateStatus('closed');
+            }
+        }
+
+        // Update status
+        function updateStatus(status) {
+            fetch(`/admin/tickets/${ticketId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('更新失败: ' + (data.error || '未知错误'));
+                }
+            })
+            .catch(err => {
+                alert('更新失败: ' + err.message);
+            });
+        }
+        
+        // Assign ticket
+        function assignTicket(adminId) {
+            if (!adminId) return;
+            
+            fetch(`/admin/tickets/${ticketId}/assign`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ admin_id: parseInt(adminId) })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('分配失败: ' + (data.error || '未知错误'));
+                }
+            })
+            .catch(err => {
+                alert('分配失败: ' + err.message);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -3,6 +3,7 @@ package bot
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -16,6 +17,7 @@ import (
 	"shop-bot/internal/bot/messages"
 	"shop-bot/internal/metrics"
 	"shop-bot/internal/broadcast"
+	"shop-bot/internal/notification"
 	"gorm.io/gorm"
 )
 
@@ -26,10 +28,19 @@ type Bot struct {
 	config    *config.Config
 	msg       *messages.Manager
 	broadcast *broadcast.Service
+	notification *notification.Service
+	ticketService TicketService // Remove pointer - interface should not be pointer
 	
 	// User state management
 	userStates     map[int64]string
 	userStatesMutex sync.RWMutex
+}
+
+// TicketService interface to avoid circular imports
+type TicketService interface {
+	GetTicketByUserMessage(userID int64) (*store.Ticket, error)
+	AddMessage(ticketID uint, senderType string, senderID int64, senderName, content string, messageID int) error
+	CreateTicket(userID int64, username, subject, category, content string) (*store.Ticket, error)
 }
 
 func New(token string, db *gorm.DB) (*Bot, error) {
@@ -49,6 +60,9 @@ func New(token string, db *gorm.DB) (*Bot, error) {
 	if cfg.EpayPID != "" && cfg.EpayKey != "" && cfg.EpayGateway != "" {
 		epayClient = epay.NewClient(cfg.EpayPID, cfg.EpayKey, cfg.EpayGateway)
 	}
+	
+	// Initialize notification service
+	notificationService := notification.NewService(api, cfg, db)
 
 	return &Bot{
 		api:    api,
@@ -57,8 +71,19 @@ func New(token string, db *gorm.DB) (*Bot, error) {
 		config: cfg,
 		msg:    messages.GetManager(),
 		broadcast: broadcast.NewService(db, api),
+		notification: notificationService,
 		userStates: make(map[int64]string),
 	}, nil
+}
+
+// SetTicketService sets the ticket service for the bot
+func (b *Bot) SetTicketService(service TicketService) {
+	b.ticketService = service
+}
+
+// GetAPI returns the telegram bot API instance
+func (b *Bot) GetAPI() *tgbotapi.BotAPI {
+	return b.api
 }
 
 func (b *Bot) Start(ctx context.Context) error {
@@ -140,17 +165,26 @@ func (b *Bot) handleUpdate(update tgbotapi.Update) {
 func (b *Bot) handleStart(message *tgbotapi.Message) {
 	// Get or create user
 	langCode := message.From.LanguageCode
-	user, err := store.GetOrCreateUser(b.db, message.From.ID, message.From.UserName)
+	user, isNew, err := store.GetOrCreateUserWithStatus(b.db, message.From.ID, message.From.UserName)
 	if err != nil {
 		logger.Error("Failed to get/create user", "error", err, "tg_user_id", message.From.ID)
 		return
 	}
 	
+	// If it's a new user, send notification to admins
+	if isNew && b.notification != nil {
+		b.notification.NotifyAdmins(notification.EventNewUser, map[string]interface{}{
+			"user_id":   user.ID,
+			"tg_user_id": user.TgUserID,
+			"username":  user.Username,
+		})
+	}
+	
 	// Determine user language
 	lang := messages.GetUserLanguage(user.Language, langCode)
 	
-	// Auto-detect language for new users or users with default English
-	if user.Language == "" || (user.Language == "en" && strings.HasPrefix(langCode, "zh")) {
+	// Update user language if needed
+	if user.Language == "" && langCode != "" {
 		detectedLang := "en"
 		if strings.HasPrefix(langCode, "zh") {
 			detectedLang = "zh"
@@ -172,6 +206,7 @@ func (b *Bot) handleStart(message *tgbotapi.Message) {
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(b.msg.Get(lang, "btn_faq")),
+			tgbotapi.NewKeyboardButton(b.msg.Get(lang, "btn_support")),
 		),
 	)
 	
@@ -188,18 +223,33 @@ func (b *Bot) handleStart(message *tgbotapi.Message) {
 func (b *Bot) handleTextMessage(message *tgbotapi.Message) {
 	// Get user for language
 	user, _ := store.GetOrCreateUser(b.db, message.From.ID, message.From.UserName)
-	
-	// Auto-detect language if user has default English but Telegram shows Chinese
-	if user.Language == "en" && strings.HasPrefix(message.From.LanguageCode, "zh") {
-		b.db.Model(&user).Update("language", "zh")
-		user.Language = "zh"
-	}
-	
 	lang := messages.GetUserLanguage(user.Language, message.From.LanguageCode)
-	
+
 	// Log the received message text for debugging
-	logger.Info("Received text message", "text", message.Text, "user_id", user.ID)
-	
+	logger.Info("Received text message",
+		"text", message.Text,
+		"user_id", user.ID,
+		"telegram_id", message.From.ID,
+		"is_reply", message.ReplyToMessage != nil)
+
+	// First check if this is an admin
+	var admin store.AdminUser
+	isAdmin := false
+	telegramID := message.From.ID
+	err := b.db.Where("telegram_id = ? AND is_active = true", telegramID).First(&admin).Error
+	if err == nil {
+		isAdmin = true
+		logger.Info("Message from admin", "admin_id", admin.ID, "admin_username", admin.Username, "telegram_id", telegramID)
+	} else {
+		logger.Info("Not an admin message", "telegram_id", telegramID, "error", err)
+	}
+
+	// Check if this is an admin replying to a ticket notification
+	if isAdmin && b.isAdminReplyToTicket(message) {
+		b.handleAdminTicketReply(message)
+		return
+	}
+
 	// Check if user is in custom deposit state
 	b.userStatesMutex.RLock()
 	userState, hasState := b.userStates[message.From.ID]
@@ -213,27 +263,83 @@ func (b *Bot) handleTextMessage(message *tgbotapi.Message) {
 	
 	// Check against localized button texts
 	switch message.Text {
-	case b.msg.Get(lang, "btn_buy"), "Buy":
+	case b.msg.Get(lang, "btn_buy"), "Buy", "购买":
 		b.handleBuy(message)
-	case b.msg.Get(lang, "btn_deposit"), "Deposit":
+		return
+	case b.msg.Get(lang, "btn_deposit"), "Deposit", "充值":
 		b.handleDeposit(message)
-	case b.msg.Get(lang, "btn_profile"), "Profile":
+		return
+	case b.msg.Get(lang, "btn_profile"), "Profile", "个人信息":
 		b.handleProfile(message)
-	case b.msg.Get(lang, "btn_orders"), "Orders", "My Orders":
+		return
+	case b.msg.Get(lang, "btn_orders"), "Orders", "My Orders", "我的订单":
 		logger.Info("Handling my orders request", "user_id", user.ID)
 		b.handleMyOrders(message)
-	case b.msg.Get(lang, "btn_faq"), "FAQ":
+		return
+	case b.msg.Get(lang, "btn_faq"), "FAQ", "常见问题":
 		b.handleFAQ(message)
+		return
+	case b.msg.Get(lang, "btn_support"), "Support", "客服支持":
+		b.handleSupportButton(message)
+		return
 	case "/language":
 		b.handleLanguageSelection(message)
-	default:
-		// Check if it's a recharge card code (starts with specific prefix)
-		if strings.HasPrefix(message.Text, "RC-") || strings.HasPrefix(message.Text, "充值卡-") {
-			b.handleRechargeCard(message)
-		} else {
-			logger.Info("Unhandled message text", "text", message.Text, "user_id", user.ID)
-		}
+		return
+	case "/ticket", "/support", "客服":
+		b.handleSupportCommand(message)
+		return
 	}
+
+	// Check if it's a recharge card code (starts with specific prefix)
+	if strings.HasPrefix(message.Text, "RC-") || strings.HasPrefix(message.Text, "充值卡-") {
+		b.handleRechargeCard(message)
+		return
+	}
+
+	// For admins, don't process as ticket message
+	if isAdmin {
+		logger.Info("Admin message not handled by any specific handler", "text", message.Text)
+		// Don't send help message to admins
+		return
+	}
+
+	// Check if user has an active ticket - treat any other message as ticket message
+	if b.ticketService != nil {
+		logger.Info("Checking for active ticket", "user_id", message.From.ID)
+		if ticket, err := b.ticketService.GetTicketByUserMessage(message.From.ID); err == nil && ticket != nil {
+			// User has an active ticket, add message to it
+			logger.Info("Found active ticket", "ticket_id", ticket.ID, "ticket_number", ticket.TicketID)
+			username := message.From.UserName
+			if username == "" {
+				username = fmt.Sprintf("User %d", message.From.ID)
+			}
+
+			err := b.ticketService.AddMessage(ticket.ID, "user", message.From.ID, username, message.Text, message.MessageID)
+			if err != nil {
+				logger.Error("Failed to add message to ticket", "error", err, "ticket_id", ticket.ID)
+			} else {
+				logger.Info("Message added to ticket successfully", "ticket_id", ticket.ID, "message", message.Text)
+				// Send confirmation to user
+				confirmMsg := b.msg.Get(lang, "support_message_sent")
+				reply := tgbotapi.NewMessage(message.Chat.ID, confirmMsg)
+				b.api.Send(reply)
+			}
+			return
+		} else {
+			logger.Info("No active ticket found", "user_id", message.From.ID, "error", err)
+		}
+	} else {
+		logger.Warn("Ticket service is nil")
+	}
+
+	// No active ticket - show help message
+	logger.Info("Unhandled message text", "text", message.Text, "user_id", user.ID)
+	helpMsg := b.msg.Get(lang, "help_message")
+	if helpMsg == "help_message" { // Fallback if template not found
+		helpMsg = "请选择一个选项或发送 /ticket 联系客服。\nPlease select an option or send /ticket to contact support."
+	}
+	reply := tgbotapi.NewMessage(message.Chat.ID, helpMsg)
+	b.api.Send(reply)
 }
 
 func (b *Bot) handleBuy(message *tgbotapi.Message) {
@@ -323,6 +429,86 @@ func (b *Bot) handleCallbackQuery(callback *tgbotapi.CallbackQuery) {
 	} else if strings.HasPrefix(callback.Data, "set_lang:") {
 		lang := strings.TrimPrefix(callback.Data, "set_lang:")
 		b.handleSetLanguage(callback, lang)
+	} else if strings.HasPrefix(callback.Data, "lang:") {
+		// Handle language switch from FAQ
+		parts := strings.Split(callback.Data, ":")
+		if len(parts) >= 2 {
+			newLang := parts[1]
+			// Update user language
+			user, _ := store.GetOrCreateUser(b.db, callback.From.ID, callback.From.UserName)
+			b.db.Model(&user).Update("language", newLang)
+
+			// Send a message with updated menu in new language
+			// Create reply keyboard with localized buttons
+			keyboard := tgbotapi.NewReplyKeyboard(
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(b.msg.Get(newLang, "btn_buy")),
+					tgbotapi.NewKeyboardButton(b.msg.Get(newLang, "btn_deposit")),
+				),
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(b.msg.Get(newLang, "btn_profile")),
+					tgbotapi.NewKeyboardButton(b.msg.Get(newLang, "btn_orders")),
+				),
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(b.msg.Get(newLang, "btn_faq")),
+					tgbotapi.NewKeyboardButton(b.msg.Get(newLang, "btn_support")),
+				),
+			)
+
+			// Send language change confirmation with new menu
+			langChangeMsg := b.msg.Get(newLang, "language_changed")
+			if langChangeMsg == "language_changed" {
+				// Fallback message if template not found
+				if newLang == "zh" {
+					langChangeMsg = "✅ 语言已切换为中文"
+				} else {
+					langChangeMsg = "✅ Language changed to English"
+				}
+			}
+
+			msg := tgbotapi.NewMessage(callback.Message.Chat.ID, langChangeMsg)
+			msg.ReplyMarkup = keyboard
+			b.api.Send(msg)
+
+			// If it's from FAQ, also show FAQ in new language
+			if len(parts) == 3 && parts[2] == "faq" {
+				// Get FAQs in new language
+				faqs, err := store.GetActiveFAQs(b.db, newLang)
+				faqTitle := b.msg.Get(newLang, "faq_title")
+				var faqContent string
+
+				if err != nil || len(faqs) == 0 {
+					faqContent = b.msg.Get(newLang, "faq_content")
+				} else {
+					for i, faq := range faqs {
+						if i > 0 {
+							faqContent += "\n\n"
+						}
+						faqContent += fmt.Sprintf("❓ *%s*\n%s", escapeMarkdown(faq.Question), escapeMarkdown(faq.Answer))
+					}
+				}
+
+				// Create new keyboard with opposite language
+				switchToLang := "zh"
+				switchToLabel := "🇨🇳 中文"
+				if newLang == "zh" {
+					switchToLang = "en"
+					switchToLabel = "🇬🇧 English"
+				}
+
+				inlineKeyboard := tgbotapi.NewInlineKeyboardMarkup(
+					tgbotapi.NewInlineKeyboardRow(
+						tgbotapi.NewInlineKeyboardButtonData(switchToLabel, fmt.Sprintf("lang:%s:faq", switchToLang)),
+					),
+				)
+
+				// Send FAQ message
+				faqMsg := tgbotapi.NewMessage(callback.Message.Chat.ID, faqTitle+"\n\n"+faqContent)
+				faqMsg.ParseMode = "Markdown"
+				faqMsg.ReplyMarkup = inlineKeyboard
+				b.api.Send(faqMsg)
+			}
+		}
 	} else if callback.Data == "balance_history" {
 		b.handleBalanceHistory(callback)
 	} else if strings.HasPrefix(callback.Data, "group_toggle_") {
@@ -766,7 +952,7 @@ func (b *Bot) handleFAQ(message *tgbotapi.Message) {
 	// Get user for language
 	user, _ := store.GetOrCreateUser(b.db, message.From.ID, message.From.UserName)
 	lang := messages.GetUserLanguage(user.Language, message.From.LanguageCode)
-	
+
 	// Get FAQs from database
 	faqs, err := store.GetActiveFAQs(b.db, lang)
 	if err != nil {
@@ -778,11 +964,11 @@ func (b *Bot) handleFAQ(message *tgbotapi.Message) {
 		b.api.Send(msg)
 		return
 	}
-	
+
 	// Build FAQ message
 	faqTitle := b.msg.Get(lang, "faq_title")
 	var faqContent string
-	
+
 	if len(faqs) == 0 {
 		// No FAQs found, use default message
 		faqContent = b.msg.Get(lang, "faq_content")
@@ -795,9 +981,27 @@ func (b *Bot) handleFAQ(message *tgbotapi.Message) {
 			faqContent += fmt.Sprintf("❓ *%s*\n%s", escapeMarkdown(faq.Question), escapeMarkdown(faq.Answer))
 		}
 	}
-	
+
+	// Create inline keyboard with language switch button
+	var keyboard tgbotapi.InlineKeyboardMarkup
+
+	// Determine the opposite language
+	switchToLang := "zh"
+	switchToLabel := "🇨🇳 中文"
+	if lang == "zh" {
+		switchToLang = "en"
+		switchToLabel = "🇬🇧 English"
+	}
+
+	keyboard = tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(switchToLabel, fmt.Sprintf("lang:%s:faq", switchToLang)),
+		),
+	)
+
 	msg := tgbotapi.NewMessage(message.Chat.ID, faqTitle+"\n\n"+faqContent)
 	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
 	b.api.Send(msg)
 }
 
@@ -846,10 +1050,6 @@ func (b *Bot) UpdateInlineStock(chatID int64, messageID int) error {
 	return err
 }
 
-// GetAPI returns the underlying Telegram Bot API instance
-func (b *Bot) GetAPI() *tgbotapi.BotAPI {
-	return b.api
-}
 
 // GetBroadcastService returns the broadcast service
 func (b *Bot) GetBroadcastService() *broadcast.Service {
@@ -1026,4 +1226,267 @@ func escapeMarkdown(text string) string {
 		"!", "\\!",
 	)
 	return replacer.Replace(text)
+}
+
+func (b *Bot) handleSupportCommand(message *tgbotapi.Message) {
+	// Get user for language
+	user, err := store.GetOrCreateUser(b.db, message.From.ID, message.From.UserName)
+	if err != nil {
+		logger.Error("Failed to get user", "error", err)
+		return
+	}
+
+	lang := messages.GetUserLanguage(user.Language, message.From.LanguageCode)
+
+	// Check if ticket service is available
+	if b.ticketService == nil {
+		msg := tgbotapi.NewMessage(message.Chat.ID, "❌ 客服系统暂时不可用 / Support system is temporarily unavailable")
+		b.api.Send(msg)
+		return
+	}
+
+	// Check if user already has an active ticket
+	ticket, err := b.ticketService.GetTicketByUserMessage(message.From.ID)
+	if err == nil && ticket != nil {
+		// User has an active ticket
+		msg := tgbotapi.NewMessage(message.Chat.ID, b.msg.Format(lang, "ticket_already_open", map[string]interface{}{
+			"TicketID": ticket.TicketID,
+		}))
+
+		// If template not found, use fallback
+		if msg.Text == "ticket_already_open" {
+			msg.Text = fmt.Sprintf("您已有一个进行中的工单：%s\n请直接发送消息继续对话。\n\nYou already have an open ticket: %s\nJust send messages to continue the conversation.", ticket.TicketID, ticket.TicketID)
+		}
+
+		b.api.Send(msg)
+		return
+	}
+
+	// Create new ticket
+	username := message.From.UserName
+	if username == "" {
+		username = fmt.Sprintf("User %d", message.From.ID)
+	}
+
+	newTicket, err := b.ticketService.CreateTicket(
+		message.From.ID,
+		username,
+		"用户咨询 / User Inquiry",
+		"general",
+		"用户发起了新的客服对话 / User initiated a support conversation",
+	)
+
+	if err != nil {
+		logger.Error("Failed to create ticket", "error", err)
+		msg := tgbotapi.NewMessage(message.Chat.ID, "❌ 创建工单失败，请稍后再试 / Failed to create ticket, please try again later")
+		b.api.Send(msg)
+		return
+	}
+
+	// Send confirmation to user
+	msg := tgbotapi.NewMessage(message.Chat.ID, b.msg.Format(lang, "ticket_created", map[string]interface{}{
+		"TicketID": newTicket.TicketID,
+	}))
+
+	// If template not found, use fallback
+	if msg.Text == "ticket_created" {
+		msg.Text = fmt.Sprintf("✅ 工单已创建：%s\n\n请发送您的问题，我们的客服人员会尽快回复您。\n\n✅ Ticket created: %s\n\nPlease send your question, our support staff will reply as soon as possible.", newTicket.TicketID, newTicket.TicketID)
+	}
+
+	b.api.Send(msg)
+}
+
+func (b *Bot) handleSupportButton(message *tgbotapi.Message) {
+	// Get user for language
+	user, err := store.GetOrCreateUser(b.db, message.From.ID, message.From.UserName)
+	if err != nil {
+		logger.Error("Failed to get user", "error", err)
+		return
+	}
+
+	lang := messages.GetUserLanguage(user.Language, message.From.LanguageCode)
+	logger.Info("Support button clicked", "user_id", user.ID, "tg_user_id", message.From.ID, "lang", lang)
+
+	// Check if ticket service is available
+	if b.ticketService == nil {
+		logger.Error("Ticket service is nil")
+		msg := tgbotapi.NewMessage(message.Chat.ID, "❌ 客服系统暂时不可用 / Support system is temporarily unavailable")
+		b.api.Send(msg)
+		return
+	}
+
+	// Check if user already has an active ticket
+	ticket, err := b.ticketService.GetTicketByUserMessage(message.From.ID)
+	if err == nil && ticket != nil {
+		// User has an active ticket - show current status
+		logger.Info("User already has active ticket", "ticket_id", ticket.ID, "ticket_number", ticket.TicketID)
+		msg := tgbotapi.NewMessage(message.Chat.ID, b.msg.Format(lang, "ticket_already_open", map[string]interface{}{
+			"TicketID": ticket.TicketID,
+		}))
+		b.api.Send(msg)
+		return
+	}
+
+	// Show support welcome message and create ticket
+	msg := tgbotapi.NewMessage(message.Chat.ID, b.msg.Get(lang, "support_welcome"))
+	b.api.Send(msg)
+
+	// Create new ticket
+	username := message.From.UserName
+	if username == "" {
+		username = fmt.Sprintf("User %d", message.From.ID)
+	}
+
+	logger.Info("Creating new ticket", "user_id", message.From.ID, "username", username)
+
+	newTicket, err := b.ticketService.CreateTicket(
+		message.From.ID,
+		username,
+		"用户咨询 / User Inquiry",
+		"general",
+		"用户点击了客服支持按钮 / User clicked support button",
+	)
+
+	if err != nil {
+		logger.Error("Failed to create ticket", "error", err)
+		errMsg := tgbotapi.NewMessage(message.Chat.ID, "❌ 创建工单失败，请稍后再试 / Failed to create ticket, please try again later")
+		b.api.Send(errMsg)
+		return
+	}
+
+	logger.Info("Ticket created successfully", "ticket_id", newTicket.ID, "ticket_number", newTicket.TicketID)
+
+	// Send ticket creation confirmation
+	confirmMsg := tgbotapi.NewMessage(message.Chat.ID, b.msg.Format(lang, "support_ticket_created", map[string]interface{}{
+		"TicketID": newTicket.TicketID,
+	}))
+	b.api.Send(confirmMsg)
+}
+
+// isAdminReplyToTicket checks if the message is from an admin replying to a ticket notification
+func (b *Bot) isAdminReplyToTicket(message *tgbotapi.Message) bool {
+	logger.Info("Checking if admin reply to ticket",
+		"has_reply", message.ReplyToMessage != nil,
+		"from_id", message.From.ID)
+
+	// Check if message is a reply
+	if message.ReplyToMessage == nil {
+		return false
+	}
+
+	logger.Info("Reply message details",
+		"reply_from_id", message.ReplyToMessage.From.ID,
+		"bot_id", b.api.Self.ID,
+		"reply_text", message.ReplyToMessage.Text)
+
+	// Check if the replied message is from the bot
+	if message.ReplyToMessage.From.ID != b.api.Self.ID {
+		return false
+	}
+
+	// Check if the replied message contains ticket notification pattern
+	replyText := message.ReplyToMessage.Text
+	isTicketNotification := strings.Contains(replyText, "💬 *工单回复提醒*") ||
+		strings.Contains(replyText, "🎫 *新工单提醒*") ||
+		strings.Contains(replyText, "工单回复提醒") ||
+		strings.Contains(replyText, "新工单提醒")
+
+	logger.Info("Ticket notification check",
+		"is_ticket_notification", isTicketNotification)
+
+	if isTicketNotification {
+		// Check if sender is an admin
+		var admin store.AdminUser
+		telegramID := message.From.ID
+		err := b.db.Where("telegram_id = ? AND is_active = true", telegramID).First(&admin).Error
+		if err == nil {
+			logger.Info("Admin replying to ticket notification",
+				"admin_id", admin.ID,
+				"admin_username", admin.Username,
+				"telegram_id", telegramID,
+				"reply_to", replyText)
+			return true
+		} else {
+			logger.Info("User is not admin", "telegram_id", telegramID, "error", err)
+		}
+	}
+
+	return false
+}
+
+// handleAdminTicketReply handles admin replies to ticket notifications
+func (b *Bot) handleAdminTicketReply(message *tgbotapi.Message) {
+	replyText := message.ReplyToMessage.Text
+	logger.Info("Processing admin ticket reply", "reply_text", replyText)
+
+	// Extract ticket ID from the notification message - handle both markdown and plain text
+	// Try markdown format first
+	ticketIDPattern := regexp.MustCompile(`工单号:\s*(?:\x60)?(TK-\d{8}-\d{3})(?:\x60)?`)
+	matches := ticketIDPattern.FindStringSubmatch(replyText)
+
+	if len(matches) < 2 {
+		// Try plain text format
+		ticketIDPattern = regexp.MustCompile(`工单号:\s*(TK-\d{8}-\d{3})`)
+		matches = ticketIDPattern.FindStringSubmatch(replyText)
+	}
+
+	if len(matches) < 2 {
+		logger.Error("Failed to extract ticket ID from notification", "text", replyText)
+		errorMsg := tgbotapi.NewMessage(message.Chat.ID, "❌ 无法识别工单号 / Failed to identify ticket number")
+		b.api.Send(errorMsg)
+		return
+	}
+
+	ticketNumber := matches[1]
+	logger.Info("Admin replying to ticket", "ticket_number", ticketNumber, "reply", message.Text)
+
+	// Find the ticket
+	var ticket store.Ticket
+	err := b.db.Where("ticket_id = ?", ticketNumber).First(&ticket).Error
+	if err != nil {
+		logger.Error("Failed to find ticket", "ticket_number", ticketNumber, "error", err)
+		errorMsg := tgbotapi.NewMessage(message.Chat.ID, "❌ 找不到工单 / Ticket not found")
+		b.api.Send(errorMsg)
+		return
+	}
+
+	// Get admin info
+	var admin store.AdminUser
+	telegramID := message.From.ID
+	err = b.db.Where("telegram_id = ?", telegramID).First(&admin).Error
+	if err != nil {
+		logger.Error("Failed to find admin", "telegram_id", telegramID, "error", err)
+		return
+	}
+
+	// Add admin's reply to the ticket
+	err = b.ticketService.AddMessage(ticket.ID, "admin", message.From.ID, admin.Username, message.Text, message.MessageID)
+	if err != nil {
+		logger.Error("Failed to add admin message to ticket", "error", err, "ticket_id", ticket.ID)
+		errorMsg := tgbotapi.NewMessage(message.Chat.ID, "❌ 发送失败 / Failed to send message")
+		b.api.Send(errorMsg)
+		return
+	}
+
+	// Send the reply to the user
+	userMsg := fmt.Sprintf("💬 *客服回复 / Support Reply*\n\n%s", message.Text)
+	msg := tgbotapi.NewMessage(ticket.UserID, userMsg)
+	msg.ParseMode = "Markdown"
+
+	_, err = b.api.Send(msg)
+	if err != nil {
+		logger.Error("Failed to send message to user", "error", err, "user_id", ticket.UserID)
+		errorMsg := tgbotapi.NewMessage(message.Chat.ID, "❌ 发送失败，用户可能已停止机器人 / Failed to send, user may have blocked the bot")
+		b.api.Send(errorMsg)
+		return
+	}
+
+	// Send confirmation to admin
+	confirmMsg := tgbotapi.NewMessage(message.Chat.ID, "✅ 消息已发送给用户 / Message sent to user")
+	b.api.Send(confirmMsg)
+
+	logger.Info("Admin reply sent to user successfully",
+		"ticket_id", ticket.ID,
+		"admin_id", admin.ID,
+		"user_id", ticket.UserID)
 }

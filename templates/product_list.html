@@ -1,604 +1,552 @@
 <!DOCTYPE html>
-<html data-theme="light">
+<html lang="zh-CN" data-theme="light">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>商品管理 - 商城机器人管理中心</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#ffffff">
-    <link rel="stylesheet" href="/static/css/theme.css">
+    
+    <!-- Modern CSS -->
+    <link rel="stylesheet" href="/static/css/modern-theme.css?v=1">
+    <link rel="stylesheet" href="/static/css/modern-components.css?v=1">
+    <link rel="stylesheet" href="/static/css/modern-layout.css?v=1">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                    商城机器人管理中心
+                </div>
+                <div class="header-actions">
+                    <button class="theme-toggle" onclick="toggleTheme()">
+                        <i class="fas fa-sun sun-icon theme-toggle-icon"></i>
+                        <i class="fas fa-moon moon-icon theme-toggle-icon"></i>
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        退出登录
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">主要功能</div>
+                    <a href="/admin/">
+                        <i class="fas fa-tachometer-alt nav-icon"></i>
+                        仪表盘
+                    </a>
+                    <a href="/admin/products" class="active">
+                        <i class="fas fa-box nav-icon"></i>
+                        商品管理
+                    </a>
+                    <a href="/admin/orders">
+                        <i class="fas fa-shopping-cart nav-icon"></i>
+                        订单管理
+                    </a>
+                    <a href="/admin/users">
+                        <i class="fas fa-users nav-icon"></i>
+                        用户管理
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">运营工具</div>
+                    <a href="/admin/recharge-cards">
+                        <i class="fas fa-credit-card nav-icon"></i>
+                        充值卡管理
+                    </a>
+                    <a href="/admin/broadcast">
+                        <i class="fas fa-bullhorn nav-icon"></i>
+                        消息推送
+                    </a>
+                    <a href="/admin/faq">
+                        <i class="fas fa-question-circle nav-icon"></i>
+                        FAQ管理
+                    </a>
+                    <a href="/admin/templates">
+                        <i class="fas fa-file-alt nav-icon"></i>
+                        消息模板
+                    </a>
+                    <a href="/admin/tickets">
+                        <i class="fas fa-ticket-alt nav-icon"></i>
+                        工单管理
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">系统</div>
+                    <a href="/admin/settings">
+                        <i class="fas fa-cog nav-icon"></i>
+                        系统设置
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <h1 class="page-title">商品管理</h1>
+                    <p class="page-subtitle">管理您的商品库存和价格</p>
+                    
+                    <div class="page-actions">
+                        {{if not .show_all}}
+                        <a href="/admin/products?show_all=true" class="btn btn-secondary">
+                            <i class="fas fa-eye-slash"></i>
+                            显示已删除商品
+                        </a>
+                        {{else}}
+                        <a href="/admin/products" class="btn btn-secondary">
+                            <i class="fas fa-eye"></i>
+                            只显示活跃商品
+                        </a>
+                        {{end}}
+                        <button class="btn btn-primary" id="addProductBtn">
+                            <i class="fas fa-plus"></i>
+                            添加商品
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Products Grid -->
+                <div class="grid grid-cols-3">
+                    {{range .products}}
+                    <div class="card {{if not .IsActive}}inactive{{end}}">
+                        <div class="card-body">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <h3 class="text-xl font-semibold mb-1">{{.Name}} {{if not .IsActive}}<span class="badge badge-danger">已删除</span>{{end}}</h3>
+                                    <p class="text-muted text-sm">{{if .Description}}{{.Description}}{{else}}暂无描述{{end}}</p>
+                                </div>
+                                <div class="text-xl font-bold text-primary-600">{{$.currency}}{{printf "%.2f" (divf .PriceCents 100)}}</div>
+                            </div>
+                            
+                            <div class="flex items-center gap-2 mb-4">
+                                <span class="text-sm text-muted">库存状态：</span>
+                                <span class="badge {{if gt .Stock 10}}badge-success{{else if gt .Stock 0}}badge-warning{{else}}badge-danger{{end}}">
+                                    库存: {{.Stock}}
+                                </span>
+                            </div>
+                            
+                            <div class="flex gap-2">
+                                {{if .IsActive}}
+                                <a href="/admin/products/{{.ID}}/codes" class="btn btn-success btn-sm">
+                                    <i class="fas fa-key"></i>
+                                    管理卡密
+                                </a>
+                                <button class="btn btn-secondary btn-sm" onclick="editProduct({{.ID}})">
+                                    <i class="fas fa-edit"></i>
+                                    编辑
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteProduct({{.ID}})">
+                                    <i class="fas fa-trash"></i>
+                                    删除
+                                </button>
+                                {{else}}
+                                <button class="btn btn-success btn-sm" onclick="restoreProduct({{.ID}})">
+                                    <i class="fas fa-undo"></i>
+                                    恢复
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="permanentDeleteProduct({{.ID}})">
+                                    <i class="fas fa-trash-alt"></i>
+                                    永久删除
+                                </button>
+                                {{end}}
+                            </div>
+                        </div>
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Product Modal -->
+    <div id="productModal" class="modal" style="display: none;">
+        <div class="modal-backdrop" onclick="closeModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">添加商品</h2>
+                <button class="modal-close" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="productForm" onsubmit="saveProduct(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="productId" name="id">
+                    
+                    <div class="form-group">
+                        <label class="form-label">商品名称</label>
+                        <input type="text" id="productName" name="name" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">商品描述</label>
+                        <textarea id="productDescription" name="description" class="form-control" rows="3" placeholder="输入商品描述..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">价格（{{.currency}}）</label>
+                        <input type="number" id="productPrice" name="price" class="form-control" step="0.01" min="0" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
     <style>
-        /* Modern UI Base Styles with Aurora Gradient */
-        * { 
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+        /* Card inactive state */
+        .card.inactive {
+            opacity: 0.6;
+            background: var(--bg-secondary);
+            border-style: dashed;
         }
-        
-        :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --aurora-gradient: linear-gradient(
-                45deg,
-                rgba(102, 126, 234, 0.1) 0%,
-                rgba(118, 75, 162, 0.1) 25%,
-                rgba(255, 154, 139, 0.1) 50%,
-                rgba(255, 206, 84, 0.1) 75%,
-                rgba(102, 126, 234, 0.1) 100%
-            );
+
+        .card.inactive .badge-danger {
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
         }
-        
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
-        }
-        
-        /* Aurora Background Animation */
-        body::before {
-            content: '';
+
+        /* Modal Styles */
+        .modal {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: 
-                radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 40% 20%, rgba(255, 154, 139, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 70% 30%, rgba(255, 206, 84, 0.2) 0%, transparent 50%);
-            animation: aurora 20s ease-in-out infinite;
-            z-index: -1;
-        }
-        
-        @keyframes aurora {
-            0%, 100% { transform: rotate(0deg) scale(1); }
-            25% { transform: rotate(5deg) scale(1.1); }
-            50% { transform: rotate(-5deg) scale(1); }
-            75% { transform: rotate(3deg) scale(1.05); }
-        }
-        
-        /* Glassmorphism Header */
-        .header {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--glass-border);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            box-shadow: 0 8px 32px var(--shadow-color);
-        }
-        
-        .header::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: var(--aurora-gradient);
-            opacity: 0.5;
-            animation: shimmer 3s ease-in-out infinite;
-        }
-        
-        @keyframes shimmer {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 0.8; }
-        }
-        
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 70px;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .logo {
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.5px;
-        }
-        
-        .nav-links {
-            display: flex;
-            gap: 32px;
-        }
-        
-        .nav-links a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-        
-        .nav-links a:hover,
-        .nav-links a.active {
-            color: var(--text-primary);
-        }
-        
-        .container { 
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 24px;
-        }
-        
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 32px;
-        }
-        
-        .page-title {
-            font-size: 32px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .btn {
-            padding: 12px 32px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-            text-decoration: none;
-            display: inline-block;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
-        
-        .btn-success {
-            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-            color: #1a1a2e;
-            box-shadow: 0 4px 15px rgba(132, 250, 176, 0.3);
-        }
-        
-        .btn-success:hover {
-            box-shadow: 0 6px 20px rgba(132, 250, 176, 0.4);
-        }
-        
-        .btn-danger {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
-        }
-        
-        .btn-danger:hover {
-            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
-        }
-        
-        .btn-sm {
-            padding: 8px 20px;
-            font-size: 13px;
-        }
-        
-        .product-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 24px;
-        }
-        
-        .product-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 24px;
-            box-shadow: 0 8px 32px var(--shadow-color);
-            transition: all 0.3s ease;
-        }
-        
-        .product-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 40px var(--shadow-color);
-        }
-        
-        .product-name {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: var(--text-primary);
-        }
-        
-        .product-description {
-            color: var(--text-secondary);
-            font-size: 14px;
-            margin-bottom: 20px;
-            min-height: 20px;
-            line-height: 1.5;
-        }
-        
-        .product-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
-        .product-price {
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .product-stock {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 500;
-        }
-        
-        .stock-available { 
-            background: rgba(132, 250, 176, 0.2);
-            color: #84fab0;
-        }
-        
-        .stock-low { 
-            background: rgba(255, 206, 84, 0.2);
-            color: #ffce54;
-        }
-        
-        .stock-out { 
-            background: rgba(245, 87, 108, 0.2);
-            color: #f5576c;
-        }
-        
-        .product-actions {
-            display: flex;
-            gap: 12px;
-        }
-        
-        .product-actions .btn {
-            flex: 1;
-            padding: 10px 20px;
-            text-align: center;
-        }
-        
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
-            z-index: 2000;
-            padding: 20px;
-            overflow-y: auto;
-        }
-        
-        .modal-content {
-            max-width: 600px;
-            margin: 50px auto;
-            background: var(--glass-bg);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            overflow: hidden;
-        }
-        
-        .modal-header {
-            padding: 24px;
-            border-bottom: 1px solid var(--glass-border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .modal-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-        
-        .close {
-            width: 32px;
-            height: 32px;
-            border: none;
-            background: var(--hover-bg);
-            border-radius: 50%;
-            color: var(--text-secondary);
-            font-size: 20px;
-            cursor: pointer;
+            z-index: var(--z-modal);
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s ease;
-            line-height: 1;
         }
-        
-        .close:hover {
-            background: var(--glass-border);
+
+        .modal-backdrop {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--overlay-bg);
+            z-index: 1;
+        }
+
+        .modal-content {
+            position: relative;
+            z-index: 2;
+            width: 90%;
+            max-width: 500px;
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-2xl);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: var(--spacing-lg);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
             color: var(--text-primary);
         }
-        
-        .modal-body {
-            padding: 24px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            border-radius: var(--radius-md);
             color: var(--text-secondary);
-            font-size: 14px;
-            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-fast);
         }
-        
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 12px 16px;
-            background: var(--hover-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
+
+        .modal-close:hover {
+            background: var(--bg-secondary);
             color: var(--text-primary);
-            font-size: 14px;
-            transition: all 0.3s ease;
         }
-        
-        .form-group input:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            background: rgba(255, 255, 255, 0.08);
+
+        .modal-body {
+            padding: var(--spacing-lg);
         }
-        
-        .form-group textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-        
+
         .modal-footer {
-            padding: 24px;
-            border-top: 1px solid var(--glass-border);
+            padding: var(--spacing-lg);
+            border-top: 1px solid var(--border-color);
             display: flex;
             justify-content: flex-end;
-            gap: 12px;
+            gap: var(--spacing-sm);
         }
-        
-        @media (max-width: 768px) {
-            .page-title {
-                font-size: 24px;
+
+        /* Toast Styles */
+        .toast-container {
+            position: fixed;
+            top: var(--spacing-lg);
+            right: var(--spacing-lg);
+            z-index: var(--z-tooltip);
+        }
+
+        .toast {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-sm);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            min-width: 300px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .toast-success {
+            border-color: var(--success-200);
+            background: var(--success-50);
+            color: var(--success-700);
+        }
+
+        .toast-error {
+            border-color: var(--danger-200);
+            background: var(--danger-50);
+            color: var(--danger-700);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
             }
-            
-            .nav-links {
-                display: none;
+            to {
+                transform: translateX(0);
+                opacity: 1;
             }
-            
-            .product-grid {
+        }
+
+        /* Responsive Grid */
+        @media (max-width: 1024px) {
+            .grid-cols-3 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .grid-cols-3 {
                 grid-template-columns: 1fr;
-            }
-            
-            .page-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 16px;
             }
         }
     </style>
-</head>
-<body>
-    <div class="header">
-        <div class="header-content">
-            <div class="logo">商城机器人管理中心</div>
-            <div class="nav-links">
-                <a href="/admin/">仪表盘</a>
-                <a href="/admin/products" class="active">商品管理</a>
-                <a href="/admin/orders">订单管理</a>
-                <a href="/admin/users">用户管理</a>
-                <a href="/admin/recharge-cards">充值卡管理</a>
-                <a href="/admin/broadcast">消息推送</a>
-                <a href="/admin/faq">FAQ管理</a>
-                <a href="/admin/templates">消息模板</a>
-                <a href="/admin/settings">系统设置</a>
-            </div>
-        </div>
-    </div>
-    
-    <div class="container">
-        <div class="page-header">
-            <h1 class="page-title">商品管理</h1>
-            <button class="btn" id="addProductBtn">+ 添加商品</button>
-        </div>
-        
-        <div class="product-grid">
-            {{range .products}}
-            <div class="product-card">
-                <div class="product-name">{{.Name}}</div>
-                <div class="product-description">{{if .Description}}{{.Description}}{{else}}暂无描述{{end}}</div>
-                <div class="product-meta">
-                    <div class="product-price">{{$.currency}}{{printf "%.2f" (divf .PriceCents 100)}}</div>
-                    <div class="product-stock {{if gt .Stock 10}}stock-available{{else if gt .Stock 0}}stock-low{{else}}stock-out{{end}}">
-                        库存: {{.Stock}}
-                    </div>
-                </div>
-                <div class="product-actions">
-                    <a href="/admin/products/{{.ID}}/codes" class="btn btn-success btn-sm">管理卡密</a>
-                    <button class="btn btn-sm" onclick="editProduct({{.ID}})">编辑</button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteProduct({{.ID}})">删除</button>
-                </div>
-            </div>
-            {{end}}
-        </div>
-    </div>
-    
-    <!-- Add/Edit Product Modal -->
-    <div id="productModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title" id="modalTitle">添加商品</h2>
-                <button class="close" onclick="closeModal()">&times;</button>
-            </div>
-            <form id="productForm" onsubmit="saveProduct(event)">
-                <div class="modal-body">
-                    <input type="hidden" id="productId" name="id">
-                    <div class="form-group">
-                        <label>商品名称</label>
-                        <input type="text" id="productName" name="name" required>
-                    </div>
-                    <div class="form-group">
-                        <label>商品描述</label>
-                        <textarea id="productDescription" name="description" placeholder="输入商品描述..."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>价格（{{.currency}}）</label>
-                        <input type="number" id="productPrice" name="price" step="0.01" min="0" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn" style="background: var(--glass-bg); color: var(--text-primary);" onclick="closeModal()">取消</button>
-                    <button type="submit" class="btn btn-success">保存</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    
+
+    <!-- Scripts -->
     <script>
-        (function() {
-            'use strict';
+        // Theme Toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Load saved theme
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        });
+
+        // Logout function
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                fetch('/api/logout', { method: 'POST' })
+                    .then(() => window.location.href = '/')
+                    .catch(err => console.error('Logout failed:', err));
+            }
+        }
+
+        // Toast notifications
+        const toast = {
+            show(message, type = 'info') {
+                const container = document.getElementById('toast-container');
+                const toastEl = document.createElement('div');
+                toastEl.className = `toast toast-${type}`;
+                toastEl.innerHTML = `
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                    <span>${message}</span>
+                `;
+                container.appendChild(toastEl);
+                
+                setTimeout(() => {
+                    toastEl.style.opacity = '0';
+                    setTimeout(() => toastEl.remove(), 300);
+                }, 3000);
+            },
+            success(message) {
+                this.show(message, 'success');
+            },
+            error(message) {
+                this.show(message, 'error');
+            }
+        };
+
+        // Product management
+        const modal = document.getElementById('productModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const productForm = document.getElementById('productForm');
+        const productIdInput = document.getElementById('productId');
+        const productNameInput = document.getElementById('productName');
+        const productDescriptionInput = document.getElementById('productDescription');
+        const productPriceInput = document.getElementById('productPrice');
+
+        // Store products data
+        window.productsData = {};
+        {{range .products}}
+        window.productsData[{{.ID}}] = {
+            name: `{{.Name}}`,
+            description: `{{.Description}}`,
+            price_cents: {{.PriceCents}}
+        };
+        {{end}}
+
+        document.getElementById('addProductBtn').addEventListener('click', function() {
+            productIdInput.value = '';
+            modalTitle.textContent = '添加商品';
+            modal.style.display = 'flex';
+            productForm.reset();
+        });
+
+        function closeModal() {
+            modal.style.display = 'none';
+            productForm.reset();
+        }
+
+        function editProduct(id) {
+            const product = window.productsData[id];
+            if (!product) return;
             
-            const modal = document.getElementById('productModal');
-            const modalTitle = document.getElementById('modalTitle');
-            const productForm = document.getElementById('productForm');
-            const productIdInput = document.getElementById('productId');
-            const productNameInput = document.getElementById('productName');
-            const productDescriptionInput = document.getElementById('productDescription');
-            const productPriceInput = document.getElementById('productPrice');
+            productIdInput.value = id;
+            productNameInput.value = product.name;
+            productDescriptionInput.value = product.description || '';
+            productPriceInput.value = (product.price_cents / 100).toFixed(2);
+            modalTitle.textContent = '编辑商品';
+            modal.style.display = 'flex';
+        }
+
+        async function saveProduct(event) {
+            event.preventDefault();
             
-            // Store products data
-            window.productsData = {};
-            {{range .products}}
-            window.productsData[{{.ID}}] = {
-                name: `{{.Name}}`,
-                description: `{{.Description}}`,
-                price_cents: {{.PriceCents}}
+            const id = productIdInput.value;
+            const data = {
+                name: productNameInput.value,
+                description: productDescriptionInput.value,
+                price_cents: Math.round(parseFloat(productPriceInput.value) * 100)
             };
-            {{end}}
             
-            function showModal(title) {
-                modalTitle.textContent = title;
-                modal.style.display = 'block';
-            }
+            const url = id ? `/admin/products/${id}` : '/admin/products';
+            const method = id ? 'PUT' : 'POST';
             
-            window.closeModal = function() {
-                modal.style.display = 'none';
-                productForm.reset();
-            }
-            
-            document.getElementById('addProductBtn').addEventListener('click', function() {
-                productIdInput.value = '';
-                showModal('添加商品');
-            });
-            
-            window.editProduct = function(id) {
-                const product = window.productsData[id];
-                if (!product) return;
-                
-                productIdInput.value = id;
-                productNameInput.value = product.name;
-                productDescriptionInput.value = product.description || '';
-                productPriceInput.value = (product.price_cents / 100).toFixed(2);
-                showModal('编辑商品');
-            }
-            
-            window.saveProduct = function(event) {
-                event.preventDefault();
-                
-                const id = productIdInput.value;
-                const data = {
-                    name: productNameInput.value,
-                    description: productDescriptionInput.value,
-                    price_cents: Math.round(parseFloat(productPriceInput.value) * 100)
-                };
-                
-                const url = id ? `/admin/products/${id}` : '/admin/products';
-                const method = id ? 'PUT' : 'POST';
-                
-                fetch(url, {
+            try {
+                const response = await fetch(url, {
                     method: method,
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(data)
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        return response.json().then(data => {
-                            throw new Error(data.error || '保存失败');
-                        });
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    alert(data.message || '保存成功！');
-                    window.location.reload();
-                })
-                .catch(error => {
-                    alert('保存失败: ' + error.message);
                 });
-            }
-            
-            window.deleteProduct = function(id) {
-                if (!confirm('确定要删除这个商品吗？删除后不可恢复。')) {
-                    return;
-                }
                 
-                fetch(`/admin/products/${id}`, {
-                    method: 'DELETE'
-                })
+                if (response.ok) {
+                    toast.success('保存成功！');
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    const error = await response.json();
+                    toast.error(error.message || '保存失败');
+                }
+            } catch (error) {
+                toast.error('保存失败: ' + error.message);
+            }
+        }
+
+        function deleteProduct(id) {
+            if (!confirm('确定要删除这个商品吗？删除后不可恢复。')) return;
+
+            fetch(`/admin/products/${id}`, { method: 'DELETE' })
                 .then(response => {
-                    if (!response.ok) {
-                        return response.json().then(data => {
-                            throw new Error(data.error || '删除失败');
+                    if (response.ok) {
+                        toast.success('删除成功！');
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        return response.json().then(error => {
+                            toast.error(error.message || '删除失败');
                         });
                     }
-                    return response.json();
-                })
-                .then(data => {
-                    alert(data.message || '删除成功！');
-                    window.location.reload();
                 })
                 .catch(error => {
-                    alert('删除失败: ' + error.message);
+                    toast.error('删除失败: ' + error.message);
                 });
-            }
-            
-            // Close modal when clicking outside
-            window.onclick = function(event) {
-                if (event.target === modal) {
-                    closeModal();
-                }
-            }
-        })();
+        }
+
+        function restoreProduct(id) {
+            if (!confirm('确定要恢复这个商品吗？')) return;
+
+            fetch(`/admin/products/${id}/restore`, { method: 'PUT' })
+                .then(response => {
+                    if (response.ok) {
+                        toast.success('恢复成功！');
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        return response.json().then(error => {
+                            toast.error(error.message || '恢复失败');
+                        });
+                    }
+                })
+                .catch(error => {
+                    toast.error('恢复失败: ' + error.message);
+                });
+        }
+
+        function permanentDeleteProduct(id) {
+            if (!confirm('确定要永久删除这个商品吗？此操作不可逆！')) return;
+            if (!confirm('再次确认：永久删除后无法恢复，确定要继续吗？')) return;
+
+            fetch(`/admin/products/${id}/permanent`, { method: 'DELETE' })
+                .then(response => {
+                    if (response.ok) {
+                        toast.success('永久删除成功！');
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        return response.json().then(error => {
+                            toast.error(error.message || '永久删除失败');
+                        });
+                    }
+                })
+                .catch(error => {
+                    toast.error('永久删除失败: ' + error.message);
+                });
+        }
     </script>
-    <script src="/static/theme.js"></script>
 </body>
 </html>

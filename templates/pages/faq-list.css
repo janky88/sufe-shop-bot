@@ -1,0 +1,320 @@
+/* FAQ List Page Specific Styles */
+
+/* FAQ Container */
+.faq-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* FAQ List */
+.faq-list {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: 0 8px 32px var(--shadow-color);
+}
+
+/* FAQ Item */
+.faq-item {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+    position: relative;
+    transition: all 0.3s ease;
+    cursor: move;
+}
+
+.faq-item:hover {
+    box-shadow: 0 4px 16px var(--shadow-color);
+}
+
+.faq-item.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+}
+
+.faq-item.drag-over {
+    transform: translateY(4px);
+    box-shadow: 0 6px 20px var(--shadow-color);
+}
+
+/* Drag Handle */
+.drag-handle {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 40px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+    cursor: grab;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.drag-handle svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* FAQ Content */
+.faq-content {
+    margin-left: 40px;
+}
+
+.faq-question {
+    font-size: var(--font-lg);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.faq-answer {
+    color: var(--text-secondary);
+    font-size: var(--font-base);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.faq-order {
+    position: absolute;
+    right: var(--spacing-lg);
+    top: var(--spacing-lg);
+    background: var(--hover-bg);
+    padding: 4px 12px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-sm);
+    color: var(--text-tertiary);
+}
+
+/* FAQ Actions */
+.faq-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+}
+
+/* Empty State */
+.empty-faq {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+}
+
+.empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-text {
+    font-size: 16px;
+}
+
+/* FAQ Modal */
+.faq-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    overflow: auto;
+}
+
+.faq-modal-content {
+    background: var(--bg-primary);
+    margin: 5% auto;
+    padding: 0;
+    width: 90%;
+    max-width: 600px;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 20px 60px var(--shadow-color);
+}
+
+.faq-modal-header {
+    padding: var(--spacing-xl);
+    border-bottom: 1px solid var(--glass-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.faq-modal-title {
+    font-size: var(--font-xl);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.faq-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    transition: all 0.2s ease;
+}
+
+.faq-modal-close:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+}
+
+.faq-modal-body {
+    padding: var(--spacing-xl);
+}
+
+.faq-modal-footer {
+    padding: var(--spacing-xl);
+    border-top: 1px solid var(--glass-border);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-md);
+}
+
+/* FAQ Form */
+.faq-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.faq-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.faq-form-label {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: var(--font-base);
+}
+
+.faq-form-input,
+.faq-form-textarea {
+    width: 100%;
+    padding: var(--spacing-md);
+    background: var(--hover-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: var(--font-base);
+    font-family: inherit;
+    transition: all 0.3s ease;
+}
+
+.faq-form-input:focus,
+.faq-form-textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.faq-form-textarea {
+    min-height: 150px;
+    resize: vertical;
+}
+
+/* Drag Indicator */
+.drag-indicator {
+    position: fixed;
+    height: 2px;
+    background: #667eea;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 1000;
+}
+
+.drag-indicator.active {
+    opacity: 1;
+}
+
+/* FAQ Form Checkbox */
+.faq-form-check {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-lg);
+}
+
+.faq-form-check input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #667eea;
+}
+
+.faq-form-check label {
+    cursor: pointer;
+    color: var(--text-primary);
+    font-size: var(--font-base);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .faq-container {
+        padding: 0;
+    }
+    
+    .faq-item {
+        padding: var(--spacing-md);
+    }
+    
+    .drag-handle {
+        width: 30px;
+    }
+    
+    .faq-content {
+        margin-left: 30px;
+    }
+    
+    .faq-question {
+        font-size: var(--font-base);
+    }
+    
+    .faq-answer {
+        font-size: var(--font-sm);
+    }
+    
+    .faq-order {
+        position: static;
+        margin-bottom: var(--spacing-sm);
+        display: inline-block;
+    }
+    
+    .faq-actions {
+        flex-direction: column;
+    }
+    
+    .faq-actions .btn {
+        width: 100%;
+    }
+    
+    .faq-modal-content {
+        margin: 10% auto;
+        width: 95%;
+    }
+}

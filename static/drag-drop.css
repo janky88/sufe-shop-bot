@@ -1,0 +1,61 @@
+/* Drag and Drop Styles */
+.draggable {
+    cursor: move;
+    transition: opacity 0.2s;
+}
+
+.draggable:hover {
+    opacity: 0.9;
+}
+
+.draggable.dragging {
+    opacity: 0.5;
+    transform: scale(0.98);
+}
+
+.drag-over {
+    background-color: rgba(102, 126, 234, 0.1);
+    border: 2px dashed var(--primary-color);
+}
+
+.drag-placeholder {
+    height: 60px;
+    margin: 8px 0;
+    background-color: rgba(102, 126, 234, 0.1);
+    border: 2px dashed var(--primary-color);
+    border-radius: 8px;
+}
+
+/* Sortable list styles */
+.sortable-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sortable-item {
+    margin-bottom: 8px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    position: relative;
+}
+
+.drag-handle {
+    cursor: move;
+    color: var(--text-secondary);
+    margin-right: 12px;
+    font-size: 20px;
+    user-select: none;
+}
+
+.drag-handle:hover {
+    color: var(--primary-color);
+}
+
+/* Ghost image */
+.drag-ghost {
+    opacity: 0.5;
+    transform: rotate(2deg);
+}

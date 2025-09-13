@@ -19,6 +19,7 @@ import (
 	"shop-bot/internal/httpadmin"
 	logger "shop-bot/internal/log"
 	"shop-bot/internal/store"
+	"shop-bot/internal/ticket"
 	"shop-bot/internal/worker"
 )
 
@@ -51,6 +52,7 @@ func toFloat64(v interface{}) (float64, error) {
 // Application holds all application components
 type Application struct {
 	Config      *config.Config
+	ConfigManager *config.Manager
 	DB          *gorm.DB
 	Cache       *cache.Client
 	Bot         *bot.Bot
@@ -58,44 +60,64 @@ type Application struct {
 	AdminServer *httpadmin.Server
 	RetryWorker *worker.RetryWorker
 	OrderMaintenanceWorker *worker.OrderMaintenanceWorker
-	
+
 	httpServer  *http.Server
 	wg          sync.WaitGroup
 }
 
 // New creates a new application instance
 func New(cfg *config.Config, db *gorm.DB) (*Application, error) {
+	// Initialize configuration manager
+	configManager := config.NewManager(cfg, db)
+
+	// Load configuration from database
+	if err := configManager.LoadFromDatabase(); err != nil {
+		logger.Warn("Failed to load config from database", "error", err)
+		// Continue with environment config
+	}
+
+	// Get updated config
+	cfg = configManager.GetConfig()
+
 	// Initialize cache
 	cacheClient, err := cache.NewClient(cfg.GetRedisURL())
 	if err != nil {
 		logger.Warn("Failed to init cache, running without cache", "error", err)
 		cacheClient = &cache.Client{} // Empty cache client
 	}
-	
+
 	// Initialize Telegram bot
 	botInstance, err := bot.New(cfg.BotToken, db)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init bot: %w", err)
 	}
-	
+
 	// Initialize broadcast service
 	broadcastService := broadcast.NewService(db, botInstance.GetAPI())
-	
+
 	// Initialize retry worker
 	retryWorker := worker.NewRetryWorker(db, botInstance.GetAPI())
-	
+
 	// Initialize order maintenance worker
 	orderMaintenanceWorker := worker.NewOrderMaintenanceWorker(db)
-	
+
 	// Create application
 	app := &Application{
 		Config:      cfg,
+		ConfigManager: configManager,
 		DB:          db,
 		Cache:       cacheClient,
 		Bot:         botInstance,
 		Broadcast:   broadcastService,
 		RetryWorker: retryWorker,
 		OrderMaintenanceWorker: orderMaintenanceWorker,
+	}
+	
+	// Initialize ticket service if bot is available
+	if botInstance != nil && db != nil {
+		ticketService := ticket.NewService(db, botInstance.GetAPI())
+		botInstance.SetTicketService(ticketService)
+		logger.Info("Ticket service initialized and connected to bot")
 	}
 	
 	// Initialize HTTP admin server with access to bot
@@ -229,7 +251,7 @@ func (app *Application) setupRouter() *gin.Engine {
 	})
 	
 	// Load HTML templates
-	r.LoadHTMLGlob("templates/*")
+	r.LoadHTMLGlob("templates/*.html")
 	
 	// Add all admin routes
 	app.AdminServer.SetupRoutes(r)

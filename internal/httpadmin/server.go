@@ -1,41 +1,49 @@
 package httpadmin
 
 import (
-	"context"
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 	"html/template"
 	"net/http"
-	"net/url"
 	"reflect"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"gorm.io/gorm"
-	
-	"shop-bot/internal/bot/messages"
+
+	"shop-bot/internal/auth"
 	"shop-bot/internal/broadcast"
 	"shop-bot/internal/config"
 	logger "shop-bot/internal/log"
-	"shop-bot/internal/metrics"
+	"shop-bot/internal/middleware"
+	"shop-bot/internal/notification"
 	payment "shop-bot/internal/payment/epay"
+	"shop-bot/internal/security"
 	"shop-bot/internal/store"
+	"shop-bot/internal/ticket"
 )
 
 type Server struct {
-	adminToken string
-	db         *gorm.DB
-	bot        *tgbotapi.BotAPI
-	epay       *payment.Client
-	config     *config.Config
-	broadcast  *broadcast.Service
+	adminToken   string
+	db           *gorm.DB
+	bot          *tgbotapi.BotAPI
+	epay         *payment.Client
+	config       *config.Config
+	configManager *config.Manager
+	broadcast    *broadcast.Service
+	notification *notification.Service
+	ticketService *ticket.Service
+	jwtService   *auth.JWTService
+
+	// Security services
+	passwordService  *auth.PasswordService
+	rateLimiter      *auth.RateLimiter
+	sessionManager   *auth.SessionManager
+	dataSecurity     *security.DataSecurity
+	securityLogger   *security.SecurityLogger
 }
 
 func NewServer(adminToken string, db *gorm.DB) *Server {
@@ -70,13 +78,100 @@ func NewServer(adminToken string, db *gorm.DB) *Server {
 		broadcastService = broadcast.NewService(db, bot)
 	}
 	
+	// Initialize notification service
+	var notificationService *notification.Service
+	if bot != nil && cfg != nil {
+		notificationService = notification.NewService(bot, cfg, db)
+	}
+	
+	// Initialize ticket service
+	var ticketService *ticket.Service
+	if bot != nil {
+		ticketService = ticket.NewService(db, bot)
+	}
+	
+	// Initialize JWT service
+	var jwtService *auth.JWTService
+	if cfg != nil {
+		jwtConfig := &auth.JWTConfig{
+			SecretKey:        cfg.JWTSecret,
+			TokenExpiry:      time.Duration(cfg.JWTExpiry) * time.Hour,
+			RefreshExpiry:    time.Duration(cfg.JWTRefreshExpiry) * 24 * time.Hour,
+			Issuer:          "shop-bot-admin",
+			LegacyToken:     adminToken,
+			EnableLegacyAuth: cfg.EnableLegacyAuth,
+		}
+		jwtService = auth.NewJWTService(jwtConfig)
+	}
+	
+	// Initialize security services
+	var passwordService *auth.PasswordService
+	var rateLimiter *auth.RateLimiter
+	var sessionManager *auth.SessionManager
+	var dataSecurity *security.DataSecurity
+	var securityLogger *security.SecurityLogger
+	
+	if cfg != nil {
+		// Password service
+		if cfg.EnablePasswordPolicy {
+			passwordConfig := &auth.PasswordConfig{
+				MinLength:      cfg.PasswordMinLength,
+				RequireUpper:   cfg.PasswordRequireUpper,
+				RequireLower:   cfg.PasswordRequireLower,
+				RequireDigit:   cfg.PasswordRequireDigit,
+				RequireSpecial: cfg.PasswordRequireSpecial,
+				BcryptCost:     12,
+			}
+			passwordService = auth.NewPasswordService(passwordConfig)
+		}
+		
+		// Rate limiter for login attempts
+		rateLimiterConfig := &auth.RateLimiterConfig{
+			MaxAttempts:     cfg.LoginMaxAttempts,
+			LockoutDuration: time.Duration(cfg.LoginLockoutMinutes) * time.Minute,
+			WindowDuration:  5 * time.Minute,
+			CleanupInterval: 10 * time.Minute,
+		}
+		rateLimiter = auth.NewRateLimiter(rateLimiterConfig)
+		
+		// Session manager
+		sessionConfig := &auth.SessionConfig{
+			MaxConcurrent:        cfg.SessionMaxConcurrent,
+			SessionTimeout:       time.Duration(cfg.SessionTimeoutHours) * time.Hour,
+			IdleTimeout:          time.Duration(cfg.SessionIdleMinutes) * time.Minute,
+			EnableIPCheck:        cfg.EnableIPValidation,
+			EnableUserAgentCheck: cfg.EnableUserAgentCheck,
+		}
+		sessionManager = auth.NewSessionManager(sessionConfig)
+		
+		// Data security
+		if ds, err := security.NewDataSecurity(cfg.DataEncryptionKey); err == nil {
+			dataSecurity = ds
+		} else {
+			logger.Error("Failed to initialize data security", "error", err)
+		}
+		
+		// Security logger
+		if cfg.EnableSecurityLogging {
+			securityLogger = security.NewSecurityLogger(true, cfg.MaskSensitiveData)
+		}
+	}
+	
 	return &Server{
-		adminToken: adminToken,
-		db:         db,
-		bot:        bot,
-		epay:       epayClient,
-		config:     cfg,
-		broadcast:  broadcastService,
+		adminToken:      adminToken,
+		db:              db,
+		bot:             bot,
+		epay:            epayClient,
+		config:          cfg,
+		broadcast:       broadcastService,
+		notification:    notificationService,
+		ticketService:   ticketService,
+		jwtService:      jwtService,
+		passwordService: passwordService,
+		rateLimiter:     rateLimiter,
+		sessionManager:  sessionManager,
+		dataSecurity:    dataSecurity,
+		securityLogger:  securityLogger,
 	}
 }
 
@@ -103,11 +198,18 @@ func NewServerWithApp(adminToken string, app interface{}) *Server {
 	if cfgField := appValue.FieldByName("Config"); cfgField.IsValid() {
 		if cfg, ok := cfgField.Interface().(*config.Config); ok {
 			server.config = cfg
-			
+
 			// Initialize payment client
 			if cfg.EpayPID != "" && cfg.EpayKey != "" {
 				server.epay = payment.NewClient(cfg.EpayPID, cfg.EpayKey, cfg.EpayGateway)
 			}
+		}
+	}
+
+	// Try to get ConfigManager field
+	if cfgManagerField := appValue.FieldByName("ConfigManager"); cfgManagerField.IsValid() {
+		if cfgManager, ok := cfgManagerField.Interface().(*config.Manager); ok {
+			server.configManager = cfgManager
 		}
 	}
 	
@@ -126,6 +228,76 @@ func NewServerWithApp(adminToken string, app interface{}) *Server {
 	if broadcastField := appValue.FieldByName("Broadcast"); broadcastField.IsValid() {
 		if bc, ok := broadcastField.Interface().(*broadcast.Service); ok {
 			server.broadcast = bc
+		}
+	}
+	
+	// Initialize notification service if we have bot and config
+	if server.bot != nil && server.config != nil {
+		server.notification = notification.NewService(server.bot, server.config, server.db)
+	}
+	
+	// Initialize ticket service
+	if server.bot != nil && server.db != nil {
+		server.ticketService = ticket.NewService(server.db, server.bot)
+	}
+	
+	// Initialize JWT service
+	if server.config != nil {
+		jwtConfig := &auth.JWTConfig{
+			SecretKey:        server.config.JWTSecret,
+			TokenExpiry:      time.Duration(server.config.JWTExpiry) * time.Hour,
+			RefreshExpiry:    time.Duration(server.config.JWTRefreshExpiry) * 24 * time.Hour,
+			Issuer:          "shop-bot-admin",
+			LegacyToken:     server.adminToken,
+			EnableLegacyAuth: server.config.EnableLegacyAuth,
+		}
+		server.jwtService = auth.NewJWTService(jwtConfig)
+		
+		// Initialize security services
+		cfg := server.config
+		
+		// Password service
+		if cfg.EnablePasswordPolicy {
+			passwordConfig := &auth.PasswordConfig{
+				MinLength:      cfg.PasswordMinLength,
+				RequireUpper:   cfg.PasswordRequireUpper,
+				RequireLower:   cfg.PasswordRequireLower,
+				RequireDigit:   cfg.PasswordRequireDigit,
+				RequireSpecial: cfg.PasswordRequireSpecial,
+				BcryptCost:     12,
+			}
+			server.passwordService = auth.NewPasswordService(passwordConfig)
+		}
+		
+		// Rate limiter for login attempts
+		rateLimiterConfig := &auth.RateLimiterConfig{
+			MaxAttempts:     cfg.LoginMaxAttempts,
+			LockoutDuration: time.Duration(cfg.LoginLockoutMinutes) * time.Minute,
+			WindowDuration:  5 * time.Minute,
+			CleanupInterval: 10 * time.Minute,
+		}
+		server.rateLimiter = auth.NewRateLimiter(rateLimiterConfig)
+		
+		// Session manager
+		sessionConfig := &auth.SessionConfig{
+			MaxConcurrent:        cfg.SessionMaxConcurrent,
+			SessionTimeout:       time.Duration(cfg.SessionTimeoutHours) * time.Hour,
+			IdleTimeout:          time.Duration(cfg.SessionIdleMinutes) * time.Minute,
+			EnableIPCheck:        cfg.EnableIPValidation,
+			EnableUserAgentCheck: cfg.EnableUserAgentCheck,
+		}
+		server.sessionManager = auth.NewSessionManager(sessionConfig)
+		
+		// Data security
+		if ds, err := security.NewDataSecurity(cfg.DataEncryptionKey); err == nil {
+			server.dataSecurity = ds
+		} else {
+			logger.Error("Failed to initialize data security", "error", err)
+		}
+		
+		// Security logger
+		if cfg.EnableSecurityLogging {
+			server.securityLogger = security.NewSecurityLogger(true, cfg.MaskSensitiveData)
 		}
 	}
 	
@@ -218,91 +390,52 @@ func (s *Server) Router() *gin.Engine {
 	// Load HTML templates AFTER setting functions
 	r.LoadHTMLGlob("templates/*")
 
-	// Health check
-	r.GET("/healthz", func(c *gin.Context) {
-		c.Status(http.StatusOK)
-	})
-	
-	// Metrics endpoint
-	r.GET("/metrics", func(c *gin.Context) {
-		promhttp.HandlerFor(
-			prometheus.DefaultGatherer,
-			promhttp.HandlerOpts{},
-		).ServeHTTP(c.Writer, c.Request)
-	})
-	
-	// Add request logging middleware
+	// Add middleware
 	r.Use(s.requestLogger())
+	r.Use(RecoveryMiddleware())  // Add panic recovery before error handler
+	r.Use(ErrorHandlerMiddleware())
 	
-	// Public routes
-	public := r.Group("/")
-	{
-		// Login page
-		public.GET("/login", s.handleLoginPage)
-		public.POST("/api/login", s.handleLogin)
-		public.POST("/api/logout", s.handleLogout)
-		
-		// Test endpoint to check products
-		public.GET("/test/products", func(c *gin.Context) {
-			var products []store.Product
-			s.db.Find(&products)
-			c.JSON(200, gin.H{
-				"count": len(products),
-				"products": products,
-			})
-		})
-	}
-	
-	// Payment routes (no auth required for callbacks)
-	payment := r.Group("/payment")
-	{
-		payment.POST("/epay/notify", s.handleEpayNotify)
-		payment.GET("/return", s.handlePaymentReturn)
-	}
-
-	// Admin routes with auth
-	admin := r.Group("/admin")
-	admin.Use(s.authMiddleware())
-	{
-		// Product management
-		admin.GET("/products", s.handleProductList)
-		admin.POST("/products", s.handleProductCreate)
-		admin.PUT("/products/:id", s.handleProductUpdate)
-		admin.DELETE("/products/:id", s.handleProductDelete)
-		
-		// Inventory management
-		admin.GET("/products/:id/codes", s.handleProductCodes)
-		admin.POST("/products/:id/codes/upload", s.handleCodesUpload)
-		admin.DELETE("/codes/:id", s.handleCodeDelete)
-		
-		// Order management
-		admin.GET("/orders", s.handleOrderList)
-		
-		// Recharge card management
-		admin.GET("/recharge-cards", s.handleRechargeCardList)
-		admin.POST("/recharge-cards/generate", s.handleRechargeCardGenerate)
-		admin.DELETE("/recharge-cards/:id", s.handleRechargeCardDelete)
-		admin.GET("/recharge-cards/:id/usage", s.handleRechargeCardUsage)
-		
-		// Message template management
-		admin.GET("/templates", s.handleTemplateList)
-		admin.POST("/templates/:id", s.handleTemplateUpdate)
-		
-		// System settings
-		admin.GET("/settings", s.handleSettingsList)
-		admin.POST("/settings", s.handleSettingsUpdate)
-		
-		// Admin dashboard
-		admin.GET("/", s.handleAdminDashboard)
-	}
+	// Set up all routes
+	s.SetupRoutes(r)
 
 	return r
 }
 
 // SetupRoutes sets up routes on an existing router
 func (s *Server) SetupRoutes(r *gin.Engine) {
+	// Apply global security middleware if configured
+	if s.config != nil {
+		// Rate limiting
+		if s.config.EnableRateLimit {
+			r.Use(middleware.RateLimitMiddleware(
+				s.config.RateLimitRequests,
+				time.Duration(s.config.RateLimitWindowMinutes)*time.Minute,
+				s.config.RateLimitMessage,
+			))
+		}
+		
+		// Security headers
+		if s.config.EnableSecurityHeaders {
+			securityConfig := &middleware.SecurityConfig{
+				EnableSecurityHeaders: true,
+				HSTS:                 s.config.EnableHSTS,
+				HSTSMaxAge:          s.config.HSTSMaxAge,
+				ContentTypeNosniff:  true,
+				XFrameOptions:       "SAMEORIGIN",
+				XSSProtection:       true,
+			}
+			r.Use(middleware.SecurityHeadersMiddleware(securityConfig))
+		}
+		
+		// CSRF protection for forms
+		if s.config.EnableCSRF {
+			// Apply CSRF middleware selectively (not on all routes)
+			// We'll add it to specific routes that need it
+		}
+	}
+	
 	// Static files (CSS, JS)
-	r.Static("/static", "./templates")
+	r.Static("/static", "./static")
 	
 	// Health check
 	r.GET("/healthz", func(c *gin.Context) {
@@ -335,6 +468,7 @@ func (s *Server) SetupRoutes(r *gin.Engine) {
 	// API routes
 	r.POST("/api/login", s.handleLogin)
 	r.POST("/api/logout", s.handleLogout)
+	r.POST("/api/refresh", s.handleRefreshToken)
 
 	// Payment webhook routes
 	r.POST("/payment/epay/notify", s.handleEpayNotify)
@@ -354,10 +488,11 @@ func (s *Server) SetupRoutes(r *gin.Engine) {
 		adminGroup.POST("/products", s.handleProductCreate)
 		adminGroup.PUT("/products/:id", s.handleProductUpdate)
 		adminGroup.DELETE("/products/:id", s.handleProductDelete)
+		adminGroup.PUT("/products/:id/restore", s.handleProductRestore)
+		adminGroup.DELETE("/products/:id/permanent", s.handleProductPermanentDelete)
 		adminGroup.GET("/products/:id/codes", s.handleProductCodes)
 		adminGroup.POST("/products/:id/codes/upload", s.handleCodesUpload)
 		adminGroup.DELETE("/codes/:id", s.handleCodeDelete)
-		adminGroup.GET("/products/template", s.handleCodeTemplate)
 		adminGroup.GET("/codes/template", s.handleCodeTemplate)
 
 		// Order management
@@ -392,11 +527,28 @@ func (s *Server) SetupRoutes(r *gin.Engine) {
 		// Broadcast management
 		adminGroup.GET("/broadcast", s.handleBroadcastList)
 		adminGroup.POST("/broadcast", s.handleBroadcastCreate)
+		adminGroup.POST("/broadcast/send", s.handleBroadcastSend)  // Add this route for AJAX requests
 		adminGroup.GET("/broadcast/:id", s.handleBroadcastDetail)
+		
+		// Ticket management
+		adminGroup.GET("/tickets", s.handleTicketList)
+		adminGroup.GET("/tickets/:id", s.handleTicketDetail)
+		adminGroup.POST("/tickets/:id/reply", s.handleTicketReply)
+		adminGroup.PUT("/tickets/:id/status", s.handleTicketStatusUpdate)
+		adminGroup.PUT("/tickets/:id/assign", s.handleTicketAssign)
+		adminGroup.GET("/ticket-templates", s.handleTicketTemplates)
+
+		// Admin profile
+		adminGroup.GET("/profile/telegram", s.handleGetAdminTelegram)
+		adminGroup.POST("/profile/telegram", s.handleSetAdminTelegram)
+		adminGroup.POST("/ticket-templates", s.handleTicketTemplateCreate)
+		adminGroup.PUT("/ticket-templates/:id", s.handleTicketTemplateUpdate)
+		adminGroup.DELETE("/ticket-templates/:id", s.handleTicketTemplateDelete)
 		
 		// Order maintenance APIs
 		adminGroup.POST("/api/settings", s.handleSaveSettings)
-		adminGroup.POST("/api/orders/expire", s.handleExpireOrders)
+		adminGroup.POST("/api/settings/core", s.handleSaveCoreSettings)
+		adminGroup.POST("/api/settings/payment", s.handleSavePaymentSettings)
 		adminGroup.POST("/api/orders/cleanup", s.handleCleanupOrders)
 
 		// Dashboard
@@ -406,500 +558,114 @@ func (s *Server) SetupRoutes(r *gin.Engine) {
 
 func (s *Server) authMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 首先检查Authorization header
-		token := c.GetHeader("Authorization")
-		if token == "Bearer "+s.adminToken {
-			c.Next()
-			return
+		// Get client IP and User-Agent for session validation
+		clientIP := c.ClientIP()
+		userAgent := c.Request.UserAgent()
+
+		// Check session first if session manager is available
+		if s.sessionManager != nil {
+			sessionID, err := c.Cookie("session_id")
+			if err == nil && sessionID != "" {
+				session, err := s.sessionManager.ValidateSession(sessionID, clientIP, userAgent)
+				if err == nil {
+					// Valid session found
+					c.Set("session_id", sessionID)
+					c.Set("user_id", session.UserID)
+					c.Set("username", session.Username)
+					c.Set("role", session.Role)
+					c.Next()
+					return
+				}
+			}
 		}
-		
-		// 然后检查cookie
-		cookie, err := c.Cookie("admin_token")
-		if err == nil && cookie == s.adminToken {
-			c.Next()
-			return
+
+		// Get token from various sources
+		var token string
+
+		// 1. Check Authorization header
+		authHeader := c.GetHeader("Authorization")
+		if authHeader != "" {
+			parts := strings.SplitN(authHeader, " ", 2)
+			if len(parts) == 2 && parts[0] == "Bearer" {
+				token = parts[1]
+			}
 		}
-		
-		// 如果是API请求或AJAX请求，返回401
-		if strings.HasPrefix(c.Request.URL.Path, "/api/") || 
+
+		// 2. Check cookie if no header token
+		if token == "" {
+			if cookie, err := c.Cookie("admin_token"); err == nil {
+				token = cookie
+			}
+		}
+
+		// 3. Validate token
+		if token != "" {
+			// First try JWT validation
+			if s.jwtService != nil {
+				claims, err := s.jwtService.ValidateToken(token)
+				if err == nil {
+					// Store claims in context for later use
+					c.Set("user_claims", claims)
+					c.Set("user_id", claims.UserID)
+					c.Set("username", claims.Username)
+					c.Set("role", claims.Role)
+
+					// Log data access if security logger is available
+					if s.securityLogger != nil {
+						s.securityLogger.LogDataAccess(
+							claims.UserID,
+							claims.Username,
+							c.Request.URL.Path,
+							c.Request.Method,
+						)
+					}
+
+					c.Next()
+					return
+				}
+				// Log JWT validation error for debugging
+				if err != auth.ErrInvalidToken {
+					logger.Debug("JWT validation failed", "error", err)
+				}
+			}
+
+			// Fall back to legacy token check for backward compatibility
+			if token == s.adminToken {
+				// Set default admin claims for legacy token
+				c.Set("user_id", "admin")
+				c.Set("username", "admin")
+				c.Set("role", "admin")
+				c.Next()
+				return
+			}
+		}
+
+		// Authentication failed
+		// Log unauthorized access
+		if s.securityLogger != nil {
+			s.securityLogger.LogAccessDenied(
+				"",
+				"",
+				c.Request.URL.Path,
+				"no_valid_authentication",
+			)
+		}
+
+		// If it's an API request or AJAX request, return 401
+		if strings.HasPrefix(c.Request.URL.Path, "/api/") ||
 		   c.GetHeader("X-Requested-With") == "XMLHttpRequest" ||
 		   strings.Contains(c.GetHeader("Accept"), "application/json") {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			JSONError(c, NewUnauthorizedError("Authentication required"))
+			c.Abort()
 			return
 		}
-		
-		// 否则重定向到登录页面
+
+		// Otherwise redirect to login page
 		c.Redirect(http.StatusFound, "/")
 		c.Abort()
 	}
 }
 
-func (s *Server) handleEpayNotify(c *gin.Context) {
-	metrics.PaymentCallbacksReceived.Inc()
-	
-	// Parse form data
-	if err := c.Request.ParseForm(); err != nil {
-		traceID := c.GetString("trace_id")
-		logger.Error("Failed to parse form", "error", err, "trace_id", traceID)
-		metrics.PaymentCallbacksFailed.Inc()
-		c.String(http.StatusBadRequest, "fail")
-		return
-	}
-	
-	params := c.Request.Form
-	traceID := c.GetString("trace_id")
-	logger.Info("Received payment callback", "params", params, "trace_id", traceID)
-	
-	// Verify signature
-	if s.epay == nil || !s.epay.VerifyNotify(params) {
-		logger.Error("Invalid callback signature")
-		c.String(http.StatusBadRequest, "fail")
-		return
-	}
-	
-	// Parse notification
-	notify := payment.ParseNotify(params)
-	
-	// Check trade status
-	if notify.TradeStatus != "TRADE_SUCCESS" {
-		logger.Info("Trade not successful", "status", notify.TradeStatus)
-		c.String(http.StatusOK, "success")
-		return
-	}
-	
-	// Find order by out_trade_no
-	var order store.Order
-	if err := s.db.Preload("User").Preload("Product").Where("epay_out_trade_no = ?", notify.OutTradeNo).First(&order).Error; err != nil {
-		logger.Error("Order not found", "out_trade_no", notify.OutTradeNo, "error", err)
-		c.String(http.StatusBadRequest, "fail")
-		return
-	}
-	
-	// Check if already paid (idempotency)
-	if order.Status != "pending" {
-		logger.Info("Order already processed", "order_id", order.ID, "status", order.Status)
-		c.String(http.StatusOK, "success")
-		return
-	}
-	
-	// Verify amount
-	notifyMoney, _ := strconv.ParseFloat(notify.Money, 64)
-	if int(notifyMoney*100) != order.AmountCents {
-		logger.Error("Amount mismatch", "expected", order.AmountCents, "received", notifyMoney*100)
-		c.String(http.StatusBadRequest, "fail")
-		return
-	}
-	
-	// Start transaction to update order and claim code
-	err := s.db.Transaction(func(tx *gorm.DB) error {
-		// Update order status
-		now := time.Now()
-		updates := map[string]interface{}{
-			"status":        "paid",
-			"epay_trade_no": notify.TradeNo,
-			"paid_at":       &now,
-		}
-		
-		if err := tx.Model(&order).Updates(updates).Error; err != nil {
-			return err
-		}
-		
-		// Track metric
-		metrics.OrdersPaid.Inc()
-		if order.Product != nil && order.Product.Name != "" {
-			metrics.RevenueTotal.WithLabelValues(order.Product.Name).Add(float64(order.AmountCents))
-		} else {
-			metrics.RevenueTotal.WithLabelValues("deposit").Add(float64(order.AmountCents))
-		}
-		
-		// Check if this is a deposit order
-		if order.ProductID == nil {
-			// This is a deposit order, add balance to user
-			if err := store.AddBalance(tx, order.UserID, order.AmountCents, "deposit", 
-				fmt.Sprintf("充值订单 #%d", order.ID), nil, &order.ID); err != nil {
-				return err
-			}
-			
-			// Update order status to delivered
-			if err := tx.Model(&order).Update("status", "delivered").Error; err != nil {
-				return err
-			}
-			
-			// Send success message to user
-			go s.sendDepositSuccessMessage(&order)
-			
-			return nil
-		}
-		
-		// Try to claim a code
-		ctx := context.Background()
-		code, err := store.ClaimOneCodeTx(ctx, tx, *order.ProductID, order.ID)
-		if err != nil {
-			if err == store.ErrNoStock {
-				// Update status to paid_no_stock
-				if err := tx.Model(&order).Update("status", "paid_no_stock").Error; err != nil {
-					return err
-				}
-				
-				// Track no stock metric
-				metrics.OrdersNoStock.Inc()
-				
-				// Send alert to admin
-				go s.alertAdminNoStock(&order)
-				
-				// Send message to user about no stock
-				go s.sendNoStockMessage(&order)
-				
-				return nil // Transaction successful, but no stock
-			}
-			return err
-		}
-		
-		// Update order status to delivered
-		if err := tx.Model(&order).Update("status", "delivered").Error; err != nil {
-			return err
-		}
-		
-		// Track delivered metric
-		metrics.OrdersDelivered.Inc()
-		
-		// Send code to user
-		go s.sendCodeToUser(&order, code)
-		
-		return nil
-	})
-	
-	if err != nil {
-		logger.Error("Failed to process payment", "error", err, "order_id", order.ID)
-		metrics.PaymentCallbacksFailed.Inc()
-		c.String(http.StatusInternalServerError, "fail")
-		return
-	}
-	
-	logger.Info("Payment processed successfully", "order_id", order.ID)
-	c.String(http.StatusOK, "success")
-}
-
-func (s *Server) handlePaymentReturn(c *gin.Context) {
-	// Check if this is a payment result with parameters
-	tradeStatus := c.Query("trade_status")
-	outTradeNo := c.Query("out_trade_no")
-	
-	if tradeStatus == "TRADE_SUCCESS" && outTradeNo != "" {
-		// This looks like a payment notification via GET
-		// Convert query params to form values for compatibility
-		params := make(url.Values)
-		for k, v := range c.Request.URL.Query() {
-			params[k] = v
-		}
-		
-		logger.Info("Processing payment return as notification", "out_trade_no", outTradeNo, "params", params)
-		
-		// Process as payment notification
-		s.processPaymentNotification(c, params)
-		
-		// Show success page
-		c.String(http.StatusOK, "Payment completed successfully! Please check your Telegram for the delivery.")
-		return
-	}
-	
-	// Simple return page
-	c.String(http.StatusOK, "Payment completed. Please check your Telegram for the delivery.")
-}
-
-func (s *Server) processPaymentNotification(c *gin.Context, params url.Values) {
-	metrics.PaymentCallbacksReceived.Inc()
-	
-	traceID := c.GetString("trace_id")
-	logger.Info("Processing payment notification", "params", params, "trace_id", traceID)
-	
-	// Verify signature
-	if s.epay == nil || !s.epay.VerifyNotify(params) {
-		logger.Error("Invalid callback signature", "params", params)
-		return
-	}
-	
-	// Parse notification
-	notify := payment.ParseNotify(params)
-	
-	// Check trade status
-	if notify.TradeStatus != "TRADE_SUCCESS" {
-		logger.Info("Trade not successful", "status", notify.TradeStatus)
-		return
-	}
-	
-	// Find order by out_trade_no
-	var order store.Order
-	if err := s.db.Preload("User").Preload("Product").Where("epay_out_trade_no = ?", notify.OutTradeNo).First(&order).Error; err != nil {
-		logger.Error("Order not found", "out_trade_no", notify.OutTradeNo, "error", err)
-		return
-	}
-	
-	// Check if already paid (idempotency)
-	if order.Status != "pending" {
-		logger.Info("Order already processed", "order_id", order.ID, "status", order.Status)
-		return
-	}
-	
-	// Verify amount
-	notifyMoney, _ := strconv.ParseFloat(notify.Money, 64)
-	if int(notifyMoney*100) != order.PaymentAmount {
-		logger.Error("Amount mismatch", "expected", order.PaymentAmount, "received", notifyMoney*100)
-		return
-	}
-	
-	// Start transaction to update order and claim code
-	err := s.db.Transaction(func(tx *gorm.DB) error {
-		// Update order status
-		now := time.Now()
-		updates := map[string]interface{}{
-			"status":        "paid",
-			"epay_trade_no": notify.TradeNo,
-			"paid_at":       &now,
-		}
-		
-		if err := tx.Model(&order).Updates(updates).Error; err != nil {
-			return err
-		}
-		
-		// Track metric
-		metrics.OrdersPaid.Inc()
-		if order.Product != nil && order.Product.Name != "" {
-			metrics.RevenueTotal.WithLabelValues(order.Product.Name).Add(float64(order.AmountCents))
-		} else {
-			metrics.RevenueTotal.WithLabelValues("deposit").Add(float64(order.AmountCents))
-		}
-		
-		// Check if this is a deposit order
-		if order.ProductID == nil {
-			// This is a deposit order, add balance to user
-			if err := store.AddBalance(tx, order.UserID, order.AmountCents, "deposit", 
-				fmt.Sprintf("充值订单 #%d", order.ID), nil, &order.ID); err != nil {
-				return err
-			}
-			
-			// Update order status to deposit
-			if err := tx.Model(&order).Update("status", "deposit").Error; err != nil {
-				return err
-			}
-			
-			// Send success message to user
-			go s.sendDepositSuccessMessage(&order)
-			
-			return nil
-		}
-		
-		// Try to claim a code
-		ctx := context.Background()
-		code, err := store.ClaimOneCodeTx(ctx, tx, *order.ProductID, order.ID)
-		if err != nil {
-			if err == store.ErrNoStock {
-				// Update status to paid_no_stock
-				if err := tx.Model(&order).Update("status", "paid_no_stock").Error; err != nil {
-					return err
-				}
-				
-				// Track no stock metric
-				metrics.OrdersNoStock.Inc()
-				
-				// Send alert to admin
-				go s.alertAdminNoStock(&order)
-				
-				// Send message to user about no stock
-				go s.sendNoStockMessage(&order)
-				
-				return nil // Transaction successful, but no stock
-			}
-			return err
-		}
-		
-		// Update order status to delivered
-		deliveredAt := time.Now()
-		if err := tx.Model(&order).Updates(map[string]interface{}{
-			"status": "delivered",
-			"delivered_at": &deliveredAt,
-		}).Error; err != nil {
-			return err
-		}
-		
-		// Track delivered metric
-		metrics.OrdersDelivered.Inc()
-		
-		// Send code to user
-		go s.sendCodeToUser(&order, code)
-		
-		return nil
-	})
-	
-	if err != nil {
-		logger.Error("Failed to process payment", "error", err, "order_id", order.ID)
-		metrics.PaymentCallbacksFailed.Inc()
-		return
-	}
-	
-	logger.Info("Payment processed successfully", "order_id", order.ID)
-}
-
-func (s *Server) sendCodeToUser(order *store.Order, code string) {
-	if s.bot == nil {
-		logger.Error("Bot not initialized, cannot send code")
-		return
-	}
-	
-	// Log bot info for debugging
-	logger.Info("Bot info", "bot_username", s.bot.Self.UserName, "bot_id", s.bot.Self.ID)
-	
-	// Get user language
-	lang := messages.GetUserLanguage(order.User.Language, "")
-	msgManager := messages.GetManager()
-	
-	// Get product name, handling nil product (e.g., deposit orders)
-	productName := "Unknown Product"
-	if order.Product != nil {
-		productName = order.Product.Name
-	}
-	
-	// Try to get message from template
-	templateKey := "order_paid_msg"
-	message := msgManager.Get(lang, templateKey)
-	
-	// If template key not found (returns the key itself), use default message
-	if message == templateKey {
-		// Fall back to a direct message format
-		message = fmt.Sprintf(
-			"🎉 支付成功！\n\n订单号：%d\n产品：%s\n卡密：`%s`\n\n感谢您的购买！",
-			order.ID, productName, code,
-		)
-		if lang == "en" {
-			message = fmt.Sprintf(
-				"🎉 Payment successful!\n\nOrder ID: %d\nProduct: %s\nCode: `%s`\n\nThank you for your purchase!",
-				order.ID, productName, code,
-			)
-		}
-	} else {
-		// Format the template message
-		message = msgManager.Format(lang, templateKey, map[string]interface{}{
-			"OrderID":     order.ID,
-			"ProductName": productName,
-			"Code":        code,
-		})
-	}
-	
-	logger.Info("Attempting to send message", "user_id", order.User.TgUserID, "message_preview", message[:50])
-	
-	msg := tgbotapi.NewMessage(order.User.TgUserID, message)
-	msg.ParseMode = "Markdown"
-	
-	// Send message and log detailed error if fails
-	resp, err := s.bot.Send(msg)
-	if err != nil {
-		logger.Error("Failed to send code to user", "error", err, "user_id", order.User.TgUserID, "order_id", order.ID, "error_type", fmt.Sprintf("%T", err))
-		// Check if it's an API error with more details
-		if apiErr, ok := err.(*tgbotapi.Error); ok {
-			logger.Error("Telegram API error details", "code", apiErr.Code, "message", apiErr.Message, "response_params", apiErr.ResponseParameters)
-		}
-	} else {
-		logger.Info("Code sent to user successfully", "order_id", order.ID, "user_id", order.User.TgUserID, "message_id", resp.MessageID, "chat_id", resp.Chat.ID)
-	}
-}
-
-func (s *Server) sendNoStockMessage(order *store.Order) {
-	if s.bot == nil {
-		return
-	}
-	
-	// Get user language
-	lang := messages.GetUserLanguage(order.User.Language, "")
-	msgManager := messages.GetManager()
-	
-	message := msgManager.Format(lang, "paid_no_stock_msg", map[string]interface{}{
-		"OrderID":     order.ID,
-		"ProductName": order.Product.Name,
-	})
-	
-	msg := tgbotapi.NewMessage(order.User.TgUserID, message)
-	s.bot.Send(msg)
-}
-
-func (s *Server) alertAdminNoStock(order *store.Order) {
-	productName := "Unknown"
-	if order.Product != nil {
-		productName = order.Product.Name
-	}
-	
-	logger.Warn("Product out of stock after payment", 
-		"order_id", order.ID, 
-		"product_id", order.ProductID,
-		"product_name", productName,
-	)
-	// TODO: Send notification to admin users
-}
-
-// TestCallbackParams generates test callback parameters
-func TestCallbackParams(outTradeNo string, money float64) url.Values {
-	params := url.Values{}
-	params.Set("pid", "test_pid")
-	params.Set("trade_no", fmt.Sprintf("TEST%d", time.Now().Unix()))
-	params.Set("out_trade_no", outTradeNo)
-	params.Set("type", "alipay")
-	params.Set("name", "Test Product")
-	params.Set("money", fmt.Sprintf("%.2f", money))
-	params.Set("trade_status", "TRADE_SUCCESS")
-	
-	// Generate test signature (using "test_key" as key)
-	// Sort parameters
-	var keys []string
-	for k := range params {
-		if k != "sign" && k != "sign_type" {
-			keys = append(keys, k)
-		}
-	}
-	sort.Strings(keys)
-	
-	// Build sign string
-	var signParts []string
-	for _, k := range keys {
-		if k != "" && params.Get(k) != "" {
-			signParts = append(signParts, fmt.Sprintf("%s=%s", k, params.Get(k)))
-		}
-	}
-	
-	signStr := strings.Join(signParts, "&") + "test_key"
-	
-	// Calculate MD5
-	h := md5.New()
-	h.Write([]byte(signStr))
-	sign := hex.EncodeToString(h.Sum(nil))
-	params.Set("sign", sign)
-	params.Set("sign_type", "MD5")
-	
-	return params
-}
-
-func (s *Server) sendDepositSuccessMessage(order *store.Order) {
-	if s.bot == nil {
-		return
-	}
-	
-	user := order.User
-	lang := messages.GetUserLanguage(user.Language, "")
-	
-	// Get new balance
-	balance, _ := store.GetUserBalance(s.db, user.ID)
-	
-	msg := messages.GetManager().Format(lang, "balance_recharged", map[string]interface{}{
-		"Amount":      fmt.Sprintf("%.2f", float64(order.AmountCents)/100),
-		"NewBalance":  fmt.Sprintf("%.2f", float64(balance)/100),
-		"CardCode":    fmt.Sprintf("充值订单#%d", order.ID),
-	})
-	
-	message := tgbotapi.NewMessage(user.TgUserID, msg)
-	message.ParseMode = "Markdown"
-	
-	if _, err := s.bot.Send(message); err != nil {
-		logger.Error("Failed to send deposit success message", "error", err, "user_id", user.ID)
-	}
-}
 
 // handleLoginPage serves the login page
 func (s *Server) handleLoginPage(c *gin.Context) {
@@ -913,27 +679,170 @@ func (s *Server) handleLogin(c *gin.Context) {
 	}
 	
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		JSONError(c, NewBadRequestError("Invalid request format", err))
 		return
 	}
 	
-	// Verify token
+	// Get client IP and User-Agent
+	clientIP := c.ClientIP()
+	userAgent := c.Request.UserAgent()
+	
+	// Check rate limiting if enabled
+	if s.rateLimiter != nil {
+		allowed, remaining := s.rateLimiter.CheckAttempt(clientIP)
+		if !allowed {
+			// Log security event
+			if s.securityLogger != nil {
+				s.securityLogger.LogRateLimited(clientIP, userAgent, "/api/login")
+			}
+			JSONError(c, NewTooManyRequestsError(auth.FormatLockoutMessage(remaining)))
+			return
+		}
+	}
+	
+	// Verify token against admin token
 	if req.Token != s.adminToken {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		// Record failed attempt
+		if s.rateLimiter != nil {
+			s.rateLimiter.RecordAttempt(clientIP, false)
+		}
+		
+		// Log failed login
+		if s.securityLogger != nil {
+			s.securityLogger.LogLoginFailed("admin", clientIP, userAgent, "invalid_token")
+		}
+		
+		JSONError(c, NewUnauthorizedError("Invalid credentials"))
 		return
 	}
 	
-	// Set cookie
-	c.SetCookie("admin_token", s.adminToken, 86400*7, "/", "", false, true) // 7 days
+	// Record successful attempt
+	if s.rateLimiter != nil {
+		s.rateLimiter.RecordAttempt(clientIP, true)
+	}
 	
-	c.JSON(http.StatusOK, gin.H{"success": true})
+	// Create session if session manager is available
+	var sessionID string
+	if s.sessionManager != nil {
+		session, err := s.sessionManager.CreateSession("admin", "admin", "admin", clientIP, userAgent)
+		if err != nil {
+			logger.Error("Failed to create session", "error", err)
+		} else {
+			sessionID = session.ID
+		}
+	}
+	
+	// Generate JWT token if JWT service is available
+	var responseToken string
+	var refreshToken string
+	
+	if s.jwtService != nil {
+		// Generate JWT tokens
+		token, err := s.jwtService.GenerateToken("admin", "admin", "admin")
+		if err != nil {
+			logger.Error("Failed to generate JWT token", "error", err)
+			// Fall back to legacy token
+			responseToken = s.adminToken
+		} else {
+			responseToken = token
+			
+			// Generate refresh token
+			refresh, err := s.jwtService.GenerateRefreshToken("admin")
+			if err != nil {
+				logger.Error("Failed to generate refresh token", "error", err)
+			} else {
+				refreshToken = refresh
+			}
+		}
+	} else {
+		// Use legacy token
+		responseToken = s.adminToken
+	}
+	
+	// Log successful login
+	if s.securityLogger != nil {
+		s.securityLogger.LogLogin("admin", "admin", clientIP, userAgent)
+	}
+	
+	// Set cookie with the token
+	c.SetCookie("admin_token", responseToken, 86400*7, "/", "", false, true) // 7 days
+	
+	// Set session cookie if available
+	if sessionID != "" {
+		c.SetCookie("session_id", sessionID, 86400, "/", "", false, true) // 1 day
+	}
+	
+	// Return tokens in response
+	response := gin.H{
+		"success": true,
+		"token":   responseToken,
+	}
+	
+	if refreshToken != "" {
+		response["refresh_token"] = refreshToken
+		// Also set refresh token as httpOnly cookie
+		c.SetCookie("refresh_token", refreshToken, 86400*7, "/", "", false, true)
+	}
+	
+	if sessionID != "" {
+		response["session_id"] = sessionID
+	}
+	
+	c.JSON(http.StatusOK, response)
 }
 
 // handleLogout processes logout request
 func (s *Server) handleLogout(c *gin.Context) {
-	// Clear cookie
+	// Clear cookies
 	c.SetCookie("admin_token", "", -1, "/", "", false, true)
+	c.SetCookie("refresh_token", "", -1, "/", "", false, true)
 	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
+// handleRefreshToken refreshes the access token using a refresh token
+func (s *Server) handleRefreshToken(c *gin.Context) {
+	// Check if JWT service is available
+	if s.jwtService == nil {
+		JSONError(c, NewInternalError(fmt.Errorf("JWT service not available")))
+		return
+	}
+	
+	var refreshToken string
+	
+	// Try to get refresh token from request body
+	var req struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+	if err := c.ShouldBindJSON(&req); err == nil && req.RefreshToken != "" {
+		refreshToken = req.RefreshToken
+	}
+	
+	// Try to get from cookie if not in body
+	if refreshToken == "" {
+		if cookie, err := c.Cookie("refresh_token"); err == nil {
+			refreshToken = cookie
+		}
+	}
+	
+	if refreshToken == "" {
+		JSONError(c, NewBadRequestError("Refresh token required", nil))
+		return
+	}
+	
+	// Generate new access token
+	newToken, err := s.jwtService.RefreshToken(refreshToken)
+	if err != nil {
+		JSONError(c, NewUnauthorizedError("Invalid refresh token"))
+		return
+	}
+	
+	// Set new token in cookie
+	c.SetCookie("admin_token", newToken, 86400*7, "/", "", false, true)
+	
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"token":   newToken,
+	})
 }
 
 // handleTestBot tests sending a message to a user
@@ -941,12 +850,12 @@ func (s *Server) handleTestBot(c *gin.Context) {
 	userIDStr := c.Param("user_id")
 	userID, err := strconv.ParseInt(userIDStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		JSONError(c, NewBadRequestError("Invalid user ID format", err))
 		return
 	}
 	
 	if s.bot == nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Bot not initialized"})
+		JSONError(c, NewInternalError(fmt.Errorf("bot service not initialized")))
 		return
 	}
 	
@@ -962,14 +871,17 @@ func (s *Server) handleTestBot(c *gin.Context) {
 	if err != nil {
 		logger.Error("Failed to send test message", "error", err, "user_id", userID, "error_type", fmt.Sprintf("%T", err))
 		if apiErr, ok := err.(*tgbotapi.Error); ok {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Failed to send message",
-				"telegram_error": apiErr.Message,
-				"telegram_code": apiErr.Code,
+			// Telegram API specific error
+			JSONError(c, AppError{
+				Code:       ErrCodeExternalService,
+				Message:    "Failed to send message via Telegram",
+				Details:    fmt.Sprintf("Telegram error: %s (code: %d)", apiErr.Message, apiErr.Code),
+				HTTPStatus: http.StatusBadRequest,
+				Err:        err,
 			})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		JSONError(c, NewExternalServiceError("Telegram Bot API", err))
 		return
 	}
 	

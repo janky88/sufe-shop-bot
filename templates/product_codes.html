@@ -1,638 +1,471 @@
 <!DOCTYPE html>
-<html data-theme="light">
+<html lang="zh-CN" data-theme="light">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>卡密管理 - {{.product.Name}}</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#ffffff">
-    <link rel="stylesheet" href="/static/css/theme.css">
+    
+    <!-- Modern CSS -->
+    <link rel="stylesheet" href="/static/css/modern-theme.css?v=2">
+    <link rel="stylesheet" href="/static/css/modern-components.css?v=2">
+    <link rel="stylesheet" href="/static/css/modern-layout.css?v=2">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        /* Modern UI Base Styles with Aurora Gradient */
-        * { 
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        
-        :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --aurora-gradient: linear-gradient(
-                45deg,
-                rgba(102, 126, 234, 0.1) 0%,
-                rgba(118, 75, 162, 0.1) 25%,
-                rgba(255, 154, 139, 0.1) 50%,
-                rgba(255, 206, 84, 0.1) 75%,
-                rgba(102, 126, 234, 0.1) 100%
-            );
-        }
-        
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
-        }
-        
-        /* Aurora Background Animation */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 40% 20%, rgba(255, 154, 139, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 70% 30%, rgba(255, 206, 84, 0.2) 0%, transparent 50%);
-            animation: aurora 20s ease-in-out infinite;
-            z-index: -1;
-        }
-        
-        @keyframes aurora {
-            0%, 100% { transform: rotate(0deg) scale(1); }
-            25% { transform: rotate(5deg) scale(1.1); }
-            50% { transform: rotate(-5deg) scale(1); }
-            75% { transform: rotate(3deg) scale(1.05); }
-        }
-        
-        /* Glassmorphism Header */
-        .header {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--glass-border);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            box-shadow: 0 8px 32px var(--shadow-color);
-        }
-        
-        .header::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: var(--aurora-gradient);
-            opacity: 0.5;
-            animation: shimmer 3s ease-in-out infinite;
-        }
-        
-        @keyframes shimmer {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 0.8; }
-        }
-        
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 24px;
-            display: flex;
+        /* Back Link */
+        .back-link {
+            display: inline-flex;
             align-items: center;
-            justify-content: space-between;
-            height: 70px;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .logo {
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.5px;
-        }
-        
-        .nav-links {
-            display: flex;
-            gap: 32px;
-        }
-        
-        .nav-links a {
+            gap: var(--spacing-xs);
             color: var(--text-secondary);
             text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
+            margin-bottom: var(--spacing-lg);
+            transition: color var(--transition-fast);
         }
         
-        .nav-links a:hover {
-            color: var(--text-primary);
+        .back-link:hover {
+            color: var(--primary-600);
         }
         
-        .container { 
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 24px;
-        }
-        
-        .breadcrumb {
-            font-size: 14px;
-            color: var(--text-secondary);
-            margin-bottom: 24px;
-        }
-        
-        .breadcrumb a {
-            color: #667eea;
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-        
-        .breadcrumb a:hover {
-            color: #764ba2;
-        }
-        
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 32px;
-        }
-        
-        .page-title {
-            font-size: 32px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .stats {
+        /* Stats Cards */
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 24px;
-            margin-bottom: 32px;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xl);
         }
         
         .stat-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 32px;
-            box-shadow: 0 8px 32px var(--shadow-color);
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
             text-align: center;
-            transition: all 0.3s ease;
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 40px var(--shadow-color);
         }
         
         .stat-value {
-            font-size: 36px;
+            font-size: 1.75rem;
             font-weight: 700;
-            margin-bottom: 12px;
-            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--primary-600);
         }
         
         .stat-label {
-            font-size: 14px;
+            font-size: 0.875rem;
             color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            margin-top: var(--spacing-xs);
         }
         
-        .upload-section {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 32px;
-            margin-bottom: 32px;
-            box-shadow: 0 8px 32px var(--shadow-color);
-        }
-        
-        .upload-section h3 {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 24px;
-            color: var(--text-primary);
-        }
-        
-        .upload-form {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-            align-items: flex-end;
-        }
-        
-        .form-group {
-            flex: 1;
-            min-width: 300px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-        
-        .form-group input[type="file"] {
-            width: 100%;
-            padding: 10px 16px;
-            background: var(--hover-bg);
-            border: 1px solid var(--glass-bg);
-            border-radius: 12px;
-            color: var(--text-primary);
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-        
-        .form-group input[type="file"]:hover {
-            background: rgba(255, 255, 255, 0.08);
-        }
-        
-        .help-text {
-            font-size: 12px;
-            color: var(--text-tertiary);
-            margin-top: 8px;
-        }
-        
-        .btn {
-            padding: 12px 32px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
-        
-        .btn-success {
-            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-            color: #1a1a2e;
-            box-shadow: 0 4px 15px rgba(132, 250, 176, 0.3);
-        }
-        
-        .btn-success:hover {
-            box-shadow: 0 6px 20px rgba(132, 250, 176, 0.4);
-        }
-        
-        .btn-danger {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
-        }
-        
-        .btn-danger:hover {
-            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
-        }
-        
-        .btn-sm {
-            padding: 6px 16px;
-            font-size: 12px;
-        }
-        
-        .table-container {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 8px 32px var(--shadow-color);
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        th {
-            background: var(--hover-bg);
-            padding: 16px;
-            text-align: left;
-            font-weight: 600;
-            color: var(--text-primary);
-            border-bottom: 1px solid var(--glass-border);
-        }
-        
-        td {
-            padding: 16px;
-            border-bottom: 1px solid var(--hover-bg);
-            color: var(--text-primary);
-        }
-        
-        tr:hover {
-            background: rgba(255, 255, 255, 0.02);
-        }
-        
-        .code-text {
-            font-family: 'Courier New', monospace;
-            background: var(--hover-bg);
-            padding: 4px 8px;
-            border-radius: 6px;
+        /* Code Table */
+        .code-content {
+            font-family: monospace;
+            background: var(--bg-secondary);
+            padding: 2px 8px;
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
             white-space: pre-wrap;
             word-break: break-all;
-            max-width: 500px;
-            display: inline-block;
-            transition: all 0.3s ease;
-            color: var(--text-primary);
         }
         
-        .code-text:hover {
-            background: var(--glass-bg);
+        .status-available {
+            color: var(--success-600);
         }
         
-        .time-text {
-            font-size: 13px;
-            color: var(--text-secondary);
+        .status-used {
+            color: var(--danger-600);
         }
         
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
-            z-index: 2000;
-            padding: 20px;
-            overflow-y: auto;
-        }
-        
-        .modal-content {
-            max-width: 500px;
-            margin: 50px auto;
-            background: var(--glass-bg);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            overflow: hidden;
-        }
-        
-        .modal-header {
-            padding: 24px;
-            border-bottom: 1px solid var(--glass-bg);
+        /* Tab Buttons */
+        .tab-buttons {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
         }
         
-        .modal-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-        
-        .close {
-            width: 32px;
-            height: 32px;
-            border: none;
-            background: var(--glass-bg);
-            border-radius: 50%;
+        .tab-button {
+            padding: var(--spacing-sm) var(--spacing-lg);
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
             color: var(--text-secondary);
-            font-size: 20px;
+            border-radius: var(--radius-md);
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            line-height: 1;
+            transition: all var(--transition-fast);
         }
         
-        .close:hover {
-            background: var(--glass-border);
-            color: var(--text-primary);
+        .tab-button.active {
+            background: var(--primary-600);
+            color: white;
+            border-color: var(--primary-600);
         }
         
-        .modal-body {
-            padding: 24px;
+        .tab-button:hover:not(.active) {
+            border-color: var(--primary-600);
+            color: var(--primary-600);
         }
         
-        .modal-body textarea {
-            width: 100%;
-            min-height: 150px;
-            padding: 12px 16px;
-            background: var(--hover-bg);
-            border: 1px solid var(--glass-bg);
-            border-radius: 12px;
-            color: var(--text-primary);
-            font-family: monospace;
-            font-size: 14px;
-            resize: vertical;
+        /* Upload Form */
+        .upload-form {
+            display: none;
         }
         
-        .modal-body textarea:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            background: rgba(255, 255, 255, 0.08);
+        .upload-form.active {
+            display: block;
         }
         
-        .modal-footer {
-            padding: 24px;
-            border-top: 1px solid var(--glass-bg);
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
+        .form-help {
+            margin-top: var(--spacing-sm);
+            padding: var(--spacing-md);
+            background: var(--info-50);
+            border: 1px solid var(--info-200);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            color: var(--info-800);
         }
         
-        .alert {
-            padding: 16px 20px;
-            border-radius: 12px;
-            margin-bottom: 24px;
+        /* Delete Button */
+        .delete-btn {
+            padding: 4px 12px;
+            background: var(--danger-600);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all var(--transition-fast);
         }
         
-        .alert-success {
-            background: rgba(132, 250, 176, 0.2);
-            border: 1px solid rgba(132, 250, 176, 0.3);
-            color: #84fab0;
-        }
-        
-        .alert-danger {
-            background: rgba(245, 87, 108, 0.2);
-            border: 1px solid rgba(245, 87, 108, 0.3);
-            color: #f5576c;
-        }
-        
-        @media (max-width: 768px) {
-            .page-title {
-                font-size: 24px;
-            }
-            
-            .upload-form {
-                flex-direction: column;
-            }
-            
-            .form-group {
-                min-width: unset;
-            }
-            
-            .stats {
-                grid-template-columns: 1fr;
-            }
+        .delete-btn:hover {
+            background: var(--danger-700);
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="header-content">
-            <div class="logo">商城机器人管理中心</div>
-            <div class="nav-links">
-                <a href="/admin/">仪表盘</a>
-                <a href="/admin/products">商品管理</a>
-                <a href="/admin/orders">订单管理</a>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                    商城机器人管理中心
+                </div>
+                <div class="header-actions">
+                    <button class="theme-toggle" onclick="toggleTheme()">
+                        <i class="fas fa-sun sun-icon theme-toggle-icon"></i>
+                        <i class="fas fa-moon moon-icon theme-toggle-icon"></i>
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        退出登录
+                    </button>
+                </div>
             </div>
-        </div>
-    </div>
-    
-    <div class="container">
-        <div class="breadcrumb">
-            <a href="/admin/products">商品管理</a> / {{.product.Name}} / 卡密管理
-        </div>
-        
-        <div class="page-header">
-            <h1 class="page-title">{{.product.Name}} - 卡密管理</h1>
-        </div>
-        
-        {{if .error}}
-        <div class="alert alert-danger">{{.error}}</div>
-        {{end}}
-        
-        {{if .success}}
-        <div class="alert alert-success">{{.success}}</div>
-        {{end}}
-        
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-value">{{.total}}</div>
-                <div class="stat-label">总卡密数</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">{{len .codes}}</div>
-                <div class="stat-label">当前页显示</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">{{.page}}</div>
-                <div class="stat-label">当前页码</div>
-            </div>
-        </div>
-        
-        <div class="upload-section">
-            <h3>批量添加卡密</h3>
-            
-            <!-- Tab buttons -->
-            <div style="display: flex; gap: 16px; margin-bottom: 24px;">
-                <button type="button" class="btn" onclick="showTab('text')" id="textTab" style="background: var(--primary-gradient);">文本输入</button>
-                <button type="button" class="btn" onclick="showTab('file')" id="fileTab" style="background: var(--glass-bg); color: var(--text-primary);">文件上传</button>
-                <a href="/admin/codes/template" class="btn" style="background: var(--glass-bg); color: var(--text-primary); text-decoration: none;">下载模板</a>
-            </div>
-            
-            <!-- Text input form -->
-            <form id="textForm" class="upload-form" onsubmit="submitTextCodes(event)" style="display: block;">
-                <div class="form-group" style="width: 100%;">
-                    <label>直接输入卡密</label>
-                    <textarea name="codes" style="width: 100%; min-height: 200px; padding: 12px 16px; background: var(--hover-bg); border: 1px solid var(--glass-bg); border-radius: 12px; color: var(--text-primary); font-family: monospace; font-size: 14px; resize: vertical;" placeholder="每行一个卡密，支持多行卡密格式：&#10;&#10;单行卡密示例：&#10;ABC123456789&#10;DEF987654321&#10;&#10;多行卡密示例（用空行分隔）：&#10;租户名: elmejorporteroesfran&#10;用户名: elmejorporteroesfran@hotmail.com&#10;密码: mudvoc-nitsa0-Nifjas&#10;&#10;账号: user001&#10;密码: pass123&#10;有效期: 2025-12-31" required></textarea>
-                    <div class="help-text">
-                        <strong>格式说明：</strong><br>
-                        1. 单行卡密：每行一个卡密<br>
-                        2. 多行卡密：多行内容组成一个卡密，不同卡密之间用空行分隔<br>
-                        3. 支持任意格式的文本内容
+        </header>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">主要功能</div>
+                    <a href="/admin/">
+                        <i class="fas fa-tachometer-alt nav-icon"></i>
+                        仪表盘
+                    </a>
+                    <a href="/admin/products" class="active">
+                        <i class="fas fa-box nav-icon"></i>
+                        商品管理
+                    </a>
+                    <a href="/admin/orders">
+                        <i class="fas fa-shopping-cart nav-icon"></i>
+                        订单管理
+                    </a>
+                    <a href="/admin/users">
+                        <i class="fas fa-users nav-icon"></i>
+                        用户管理
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">运营工具</div>
+                    <a href="/admin/recharge-cards">
+                        <i class="fas fa-credit-card nav-icon"></i>
+                        充值卡管理
+                    </a>
+                    <a href="/admin/broadcast">
+                        <i class="fas fa-bullhorn nav-icon"></i>
+                        消息推送
+                    </a>
+                    <a href="/admin/faq">
+                        <i class="fas fa-question-circle nav-icon"></i>
+                        FAQ管理
+                    </a>
+                    <a href="/admin/templates">
+                        <i class="fas fa-file-alt nav-icon"></i>
+                        消息模板
+                    </a>
+                    <a href="/admin/tickets">
+                        <i class="fas fa-ticket-alt nav-icon"></i>
+                        工单管理
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">系统</div>
+                    <a href="/admin/settings">
+                        <i class="fas fa-cog nav-icon"></i>
+                        系统设置
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <!-- Back Link -->
+                <a href="/admin/products" class="back-link">
+                    <i class="fas fa-arrow-left"></i>
+                    返回商品列表
+                </a>
+                
+                <!-- Page Header -->
+                <div class="page-header">
+                    <h1 class="page-title">{{.product.Name}} - 卡密管理</h1>
+                    <p class="page-subtitle">管理商品卡密库存</p>
+                </div>
+                
+                {{if .error}}
+                <div class="alert alert-danger mb-4">
+                    <i class="fas fa-exclamation-circle"></i>
+                    {{.error}}
+                </div>
+                {{end}}
+                
+                {{if .success}}
+                <div class="alert alert-success mb-4">
+                    <i class="fas fa-check-circle"></i>
+                    {{.success}}
+                </div>
+                {{end}}
+                
+                <!-- Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">{{.total}}</div>
+                        <div class="stat-label">总卡密数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{len .codes}}</div>
+                        <div class="stat-label">当前页显示</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{.page}}</div>
+                        <div class="stat-label">当前页码</div>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-success">添加卡密</button>
-            </form>
-            
-            <!-- File upload form -->
-            <form id="fileForm" class="upload-form" action="/admin/products/{{.product.ID}}/codes/upload" method="post" enctype="multipart/form-data" style="display: none;">
-                <div class="form-group">
-                    <label>选择文件</label>
-                    <input type="file" name="file" accept=".txt,.csv" required>
-                    <div class="help-text">支持TXT或CSV文件，格式与文本输入相同</div>
+                
+                <!-- Add Codes Section -->
+                <div class="content-section">
+                    <h3 class="text-lg font-semibold mb-4">批量添加卡密</h3>
+                    
+                    <!-- Tab buttons -->
+                    <div class="tab-buttons">
+                        <button type="button" class="tab-button active" onclick="showTab('text')" id="textTab">文本输入</button>
+                        <button type="button" class="tab-button" onclick="showTab('file')" id="fileTab">文件上传</button>
+                        <a href="/admin/codes/template" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-download"></i>
+                            下载模板
+                        </a>
+                    </div>
+                    
+                    <!-- Text input form -->
+                    <form id="textForm" class="upload-form active" onsubmit="submitTextCodes(event)">
+                        <div class="form-group">
+                            <label class="form-label">直接输入卡密</label>
+                            <textarea name="codes" class="form-control" rows="8" placeholder="每行一个卡密，支持多行卡密格式：&#10;&#10;单行卡密示例：&#10;ABC123456789&#10;DEF987654321&#10;&#10;多行卡密示例（用空行分隔）：&#10;租户名: elmejorporteroesfran&#10;用户名: elmejorporteroesfran@hotmail.com&#10;密码: mudvoc-nitsa0-Nifjas&#10;&#10;账号: user001&#10;密码: pass123&#10;有效期: 2025-12-31" required></textarea>
+                            <div class="form-help">
+                                <strong>格式说明：</strong><br>
+                                1. 单行卡密：每行一个卡密<br>
+                                2. 多行卡密：多行内容组成一个卡密，不同卡密之间用空行分隔<br>
+                                3. 支持任意格式的文本内容
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i>
+                            添加卡密
+                        </button>
+                    </form>
+                    
+                    <!-- File upload form -->
+                    <form id="fileForm" class="upload-form" action="/admin/products/{{.product.ID}}/codes/upload" method="post" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label class="form-label">选择文件</label>
+                            <input type="file" name="file" accept=".txt,.csv" class="form-control" required>
+                            <div class="form-help">支持TXT或CSV文件，格式与文本输入相同</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload"></i>
+                            上传卡密
+                        </button>
+                    </form>
                 </div>
-                <button type="submit" class="btn btn-success">上传卡密</button>
-            </form>
-        </div>
-        
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th style="width: 50%;">卡密内容</th>
-                        <th>状态</th>
-                        <th>添加时间</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{range .codes}}
-                    <tr>
-                        <td>{{.ID}}</td>
-                        <td>
-                            <span class="code-text">{{.Code}}</span>
-                        </td>
-                        <td>
-                            {{if .IsSold}}
-                                <span style="color: #ff9a8b;">已使用</span>
-                            {{else}}
-                                <span style="color: #84fab0;">未使用</span>
+                
+                <!-- Codes Table -->
+                <div class="content-section">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th style="width: 50%;">卡密内容</th>
+                                    <th>状态</th>
+                                    <th>添加时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{range .codes}}
+                                <tr>
+                                    <td>{{.ID}}</td>
+                                    <td>
+                                        <span class="code-content">{{.Code}}</span>
+                                    </td>
+                                    <td>
+                                        {{if .IsSold}}
+                                            <span class="badge badge-danger">已使用</span>
+                                        {{else}}
+                                            <span class="badge badge-success">未使用</span>
+                                        {{end}}
+                                    </td>
+                                    <td class="text-sm">{{.CreatedAt.Format "2006-01-02 15:04:05"}}</td>
+                                    <td>
+                                        {{if not .IsSold}}
+                                            <button class="delete-btn" onclick="deleteCode({{.ID}}, {{$.product.ID}})">删除</button>
+                                        {{else}}
+                                            -
+                                        {{end}}
+                                    </td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div class="pagination-container">
+                        {{$page := .page}}
+                        {{$totalPages := divf .total .limit | addf 0.999 | int}}
+                        
+                        <div class="pagination">
+                            {{if gt $page 1}}
+                                <a href="?page={{subf $page 1}}" class="pagination-btn">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
                             {{end}}
-                        </td>
-                        <td class="time-text">{{.CreatedAt.Format "2006-01-02 15:04:05"}}</td>
-                        <td>
-                            {{if not .IsSold}}
-                                <button class="btn btn-danger btn-sm" onclick="deleteCode({{.ID}}, {{$.product.ID}})">删除</button>
-                            {{else}}
-                                -
+                            
+                            {{if gt $totalPages 1}}
+                                {{range $i := seq 1 $totalPages}}
+                                    {{if and (or (le $i 3) (ge $i (subf $totalPages 2))) (or (and (ge $i (subf $page 2)) (le $i (addf $page 2))) (or (le $page 3) (ge $page (subf $totalPages 2))))}}
+                                        {{if eq $i $page}}
+                                            <span class="pagination-btn active">{{$i}}</span>
+                                        {{else}}
+                                            <a href="?page={{$i}}" class="pagination-btn">{{$i}}</a>
+                                        {{end}}
+                                    {{else if or (eq $i 4) (eq $i (subf $totalPages 3))}}
+                                        {{if and (gt $page 5) (lt $page (subf $totalPages 4))}}
+                                            <span class="pagination-ellipsis">...</span>
+                                        {{end}}
+                                    {{end}}
+                                {{end}}
                             {{end}}
-                        </td>
-                    </tr>
-                    {{end}}
-                </tbody>
-            </table>
-        </div>
-        
-        <div style="margin-top: 24px; text-align: center;">
-            <a href="/admin/products" class="btn">返回商品列表</a>
-        </div>
-    </div>
-    
-    <!-- Add Code Modal -->
-    <div id="addModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title">批量添加卡密</h2>
-                <span class="close" onclick="closeModal()">&times;</span>
+                            
+                            {{if lt $page $totalPages}}
+                                <a href="?page={{addf $page 1}}" class="pagination-btn">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            {{end}}
+                        </div>
+                    </div>
+                </div>
             </div>
-            <form id="addForm" onsubmit="submitCodes(event)">
-                <div class="modal-body">
-                    <label style="color: var(--text-secondary); font-size: 14px; display: block; margin-bottom: 8px;">
-                        每行一个卡密，支持多行卡密（用|||分隔）
-                    </label>
-                    <textarea name="codes" placeholder="请输入卡密内容..." required></textarea>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn" style="background: var(--glass-bg); color: var(--text-primary);" onclick="closeModal()">取消</button>
-                    <button type="submit" class="btn btn-success">添加</button>
-                </div>
-            </form>
-        </div>
+        </main>
     </div>
     
+    <style>
+        /* Pagination */
+        .pagination-container {
+            margin-top: var(--spacing-lg);
+            display: flex;
+            justify-content: center;
+        }
+
+        .pagination {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+
+        .pagination-btn {
+            min-width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 var(--spacing-sm);
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            transition: all var(--transition-fast);
+            text-decoration: none;
+        }
+
+        .pagination-btn:hover {
+            background: var(--bg-secondary);
+            border-color: var(--border-hover);
+            color: var(--text-primary);
+        }
+
+        .pagination-btn.active {
+            background: var(--primary-600);
+            border-color: var(--primary-600);
+            color: white;
+        }
+
+        .pagination-ellipsis {
+            padding: 0 var(--spacing-sm);
+            color: var(--text-tertiary);
+        }
+    </style>
+    
+    <!-- Scripts -->
     <script>
+        // Theme Toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Load saved theme
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        });
+
+        // Logout function
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                fetch('/api/logout', { method: 'POST' })
+                    .then(() => window.location.href = '/')
+                    .catch(err => console.error('Logout failed:', err));
+            }
+        }
+        
+        // Tab switching
         function showTab(tab) {
             const textForm = document.getElementById('textForm');
             const fileForm = document.getElementById('fileForm');
@@ -640,118 +473,64 @@
             const fileTab = document.getElementById('fileTab');
             
             if (tab === 'text') {
-                textForm.style.display = 'block';
-                fileForm.style.display = 'none';
-                textTab.style.background = 'var(--primary-gradient)';
-                textTab.style.color = 'white';
-                fileTab.style.background = 'var(--glass-bg)';
-                fileTab.style.color = 'var(--text-primary)';
+                textForm.classList.add('active');
+                fileForm.classList.remove('active');
+                textTab.classList.add('active');
+                fileTab.classList.remove('active');
             } else {
-                textForm.style.display = 'none';
-                fileForm.style.display = 'block';
-                fileTab.style.background = 'var(--primary-gradient)';
-                fileTab.style.color = 'white';
-                textTab.style.background = 'var(--glass-bg)';
-                textTab.style.color = 'var(--text-primary)';
+                fileForm.classList.add('active');
+                textForm.classList.remove('active');
+                fileTab.classList.add('active');
+                textTab.classList.remove('active');
             }
         }
         
-        function submitTextCodes(event) {
+        // Submit text codes
+        async function submitTextCodes(event) {
             event.preventDefault();
-            const form = event.target;
-            const formData = new FormData(form);
-            
-            fetch(`/admin/products/{{.product.ID}}/codes/upload`, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(data => {
-                        throw new Error(data.error || '上传失败');
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                alert(data.message || '添加成功！');
-                window.location.reload();
-            })
-            .catch(error => {
-                alert('添加失败: ' + error.message);
-            });
-        }
-        
-        function showAddModal() {
-            document.getElementById('addModal').style.display = 'block';
-        }
-        
-        function closeModal() {
-            document.getElementById('addModal').style.display = 'none';
-            document.getElementById('addForm').reset();
-        }
-        
-        function submitCodes(event) {
-            event.preventDefault();
-            const form = event.target;
-            const formData = new FormData(form);
-            
-            fetch(`/admin/products/{{.product.ID}}/codes`, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('添加成功！');
+
+            const formData = new FormData();
+            formData.append('codes', event.target.codes.value);
+
+            try {
+                const response = await fetch('/admin/products/{{.product.ID}}/codes/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    alert(result.message || '卡密添加成功');
                     window.location.reload();
                 } else {
-                    alert('添加失败: ' + (data.error || '未知错误'));
+                    const error = await response.json();
+                    alert(error.error || '添加失败');
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 alert('添加失败: ' + error.message);
-            });
+            }
         }
         
-        function deleteCode(codeId, productId) {
+        // Delete code
+        async function deleteCode(id, productId) {
             if (!confirm('确定要删除这个卡密吗？')) {
                 return;
             }
-            
-            fetch(`/admin/codes/${codeId}`, {
-                method: 'DELETE'
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(data => {
-                        throw new Error(data.error || '删除失败');
-                    });
+
+            try {
+                const response = await fetch(`/admin/codes/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    alert('删除成功');
+                    window.location.reload();
+                } else {
+                    const error = await response.json();
+                    alert(error.error || '删除失败');
                 }
-                return response.json();
-            })
-            .then(data => {
-                alert(data.message || '删除成功！');
-                window.location.reload();
-            })
-            .catch(error => {
+            } catch (error) {
                 alert('删除失败: ' + error.message);
-            });
-        }
-        
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('addModal');
-            if (event.target === modal) {
-                closeModal();
-            }
-        }
-    </script>
-    <script src="/static/theme.js"></script>
-    <script>
-        function toggleTheme() {
-            if (window.themeManager) {
-                window.themeManager.toggleTheme();
             }
         }
     </script>

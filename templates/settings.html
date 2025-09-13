@@ -1,543 +1,541 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#ffffff">
-    <link rel="stylesheet" href="/static/css/theme.css">
     <title>系统设置 - 商城机器人管理中心</title>
+    
+    <!-- Modern Theme System -->
+    <link rel="stylesheet" href="/static/css/modern-theme.css?v=1">
+    <link rel="stylesheet" href="/static/css/modern-components.css?v=1">
+    <link rel="stylesheet" href="/static/css/modern-layout.css?v=1">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Page Styles -->
     <style>
-        /* Modern UI Base Styles with Aurora Gradient */
-        * { 
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+        .settings-grid {
+            display: grid;
+            gap: var(--spacing-lg);
         }
         
-        :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --aurora-gradient: linear-gradient(
-                45deg,
-                rgba(102, 126, 234, 0.1) 0%,
-                rgba(118, 75, 162, 0.1) 25%,
-                rgba(255, 154, 139, 0.1) 50%,
-                rgba(255, 206, 84, 0.1) 75%,
-                rgba(102, 126, 234, 0.1) 100%
-            );
+        .setting-group {
+            margin-bottom: var(--spacing-lg);
         }
         
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
-        }
-        
-        /* Aurora Background Animation */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 40% 20%, rgba(255, 154, 139, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 70% 30%, rgba(255, 206, 84, 0.2) 0%, transparent 50%);
-            animation: aurora 20s ease-in-out infinite;
-            z-index: -1;
-        }
-        
-        @keyframes aurora {
-            0%, 100% { transform: rotate(0deg) scale(1); }
-            25% { transform: rotate(5deg) scale(1.1); }
-            50% { transform: rotate(-5deg) scale(1); }
-            75% { transform: rotate(3deg) scale(1.05); }
-        }
-        
-        /* Glassmorphism Header */
-        .header {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--glass-border);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            box-shadow: 0 8px 32px var(--shadow-color);
-        }
-        
-        .header::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: var(--aurora-gradient);
-            opacity: 0.5;
-            animation: shimmer 3s ease-in-out infinite;
-        }
-        
-        @keyframes shimmer {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 0.8; }
-        }
-        
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 70px;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .logo {
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.5px;
-        }
-        
-        .logout-btn {
-            padding: 10px 24px;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
-        }
-        
-        .logout-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
-        }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 24px;
-        }
-        
-        /* Glass Navigation */
-        .nav { 
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 8px;
-            margin-bottom: 24px;
-            box-shadow: 0 8px 32px var(--shadow-color);
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            scrollbar-width: none;
-        }
-        
-        .nav::-webkit-scrollbar {
-            display: none;
-        }
-        
-        .nav a { 
-            flex: 0 0 auto;
-            padding: 12px 24px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            text-align: center;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            white-space: nowrap;
-        }
-        
-        .nav a:hover { 
-            background: var(--glass-bg);
-            color: var(--text-primary);
-        }
-        
-        .nav a.active {
-            background: var(--primary-gradient);
-            color: white;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        }
-        
-        /* Page Title */
-        .page-title {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 32px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        /* Settings Card */
-        .settings-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 32px;
-            box-shadow: 0 8px 32px var(--shadow-color);
-            margin-bottom: 24px;
-        }
-        
-        .section-title {
-            font-size: 24px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 24px;
-        }
-        
-        .form-group {
-            margin-bottom: 24px;
-        }
-        
-        .form-label {
+        .setting-label {
             display: block;
-            font-size: 14px;
+            margin-bottom: var(--spacing-sm);
             font-weight: 500;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-        }
-        
-        .form-control {
-            width: 100%;
-            max-width: 400px;
-            padding: 12px 16px;
-            background: var(--hover-bg);
-            border: 1px solid var(--glass-bg);
-            border-radius: 12px;
             color: var(--text-primary);
-            font-size: 14px;
-            transition: all 0.3s ease;
         }
         
-        .form-control:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            background: rgba(255, 255, 255, 0.08);
-        }
-        
-        select.form-control {
-            cursor: pointer;
-        }
-        
-        select.form-control option {
-            background: var(--bg-primary);
+        .setting-help {
+            margin-top: var(--spacing-xs);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
         }
         
         .currency-preview {
-            display: inline-block;
-            margin-left: 16px;
-            padding: 8px 16px;
-            background: var(--glass-bg);
-            border-radius: 12px;
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-        
-        .currency-preview strong {
-            color: var(--text-primary);
-            font-weight: 600;
-        }
-        
-        .btn-primary {
-            padding: 12px 32px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
-        
-        .btn-primary:active {
-            transform: translateY(0);
-        }
-        
-        input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            margin-right: 8px;
-            cursor: pointer;
-        }
-        
-        .alert {
-            padding: 16px 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            display: none;
-        }
-        
-        .alert.success {
-            background: rgba(132, 250, 176, 0.2);
-            border: 1px solid rgba(132, 250, 176, 0.3);
-            color: #84fab0;
-        }
-        
-        .alert.error {
-            background: rgba(245, 87, 108, 0.2);
-            border: 1px solid rgba(245, 87, 108, 0.3);
-            color: #f5576c;
-        }
-        
-        .help-text {
-            font-size: 13px;
-            color: var(--text-tertiary);
-            margin-top: 8px;
-        }
-        
-        /* Order Stats */
-        .stats-container {
-            margin-top: 24px;
-            padding: 24px;
-            background: var(--hover-bg);
-            border-radius: 16px;
-            border: 1px solid var(--glass-bg);
-        }
-        
-        .stats-container h3 {
-            font-size: 18px;
-            margin-bottom: 16px;
-            color: var(--text-primary);
+            margin-left: var(--spacing-md);
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
         }
         
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 16px;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-lg);
         }
         
         .stat-item {
-            background: var(--hover-bg);
-            padding: 16px;
-            border-radius: 12px;
+            background: var(--bg-secondary);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
             text-align: center;
         }
         
         .stat-label {
-            color: var(--text-tertiary);
-            font-size: 13px;
-            margin-bottom: 8px;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xs);
         }
         
         .stat-value {
-            font-size: 24px;
-            font-weight: 600;
+            font-size: 1.5rem;
+            font-weight: 700;
         }
         
         .stat-value.pending {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--warning-color);
         }
         
         .stat-value.expired {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--danger-color);
         }
         
         .stat-value.paid {
-            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--success-color);
         }
         
         .stat-value.total {
-            color: var(--text-primary);
+            color: var(--primary-color);
         }
         
-        /* Responsive */
-        @media (max-width: 768px) {
-            .page-title {
-                font-size: 24px;
-            }
-            
-            .form-control {
-                max-width: 100%;
-            }
+        .action-buttons {
+            display: flex;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: 1.25rem;
+            height: 1.25rem;
+            cursor: pointer;
+        }
+        
+        .checkbox-label {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+        
+        #alert {
+            margin-bottom: var(--spacing-lg);
         }
     </style>
-    <script>
-    function logout() {
-        fetch('/api/logout', { method: 'POST' })
-            .then(() => window.location.href = '/')
-            .catch(err => console.error('Logout failed:', err));
-    }
-    </script>
 </head>
 <body>
-    <div class="header">
-        <div class="header-content">
-            <div class="logo">商城机器人管理中心</div>
-            <div style="display: flex; align-items: center; gap: 16px;">
-                <button class="theme-toggle" onclick="toggleTheme()" title="切换主题 (Ctrl+Shift+T)">
-                    <span class="theme-toggle-icon sun">☀️</span>
-                    <span class="theme-toggle-icon moon">🌙</span>
-                </button>
-                <button class="logout-btn" onclick="logout()">退出登录</button>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                    商城机器人管理中心
+                </div>
+                <div class="header-actions">
+                    <button class="theme-toggle" onclick="toggleTheme()">
+                        <i class="fas fa-sun sun-icon theme-toggle-icon"></i>
+                        <i class="fas fa-moon moon-icon theme-toggle-icon"></i>
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        退出登录
+                    </button>
+                </div>
             </div>
-        </div>
-    </div>
-    
-    <div class="container">
-        <div class="nav">
-            <a href="/admin/">仪表盘</a>
-            <a href="/admin/products">商品管理</a>
-            <a href="/admin/orders">订单管理</a>
-            <a href="/admin/users">用户管理</a>
-            <a href="/admin/recharge-cards">充值卡管理</a>
-            <a href="/admin/broadcast">消息推送</a>
-            <a href="/admin/faq">FAQ管理</a>
-            <a href="/admin/templates">消息模板</a>
-            <a href="/admin/settings" class="active">系统设置</a>
-        </div>
-        
-        <h1 class="page-title">系统设置</h1>
-        
-        <div class="settings-card">
-            <h2 class="section-title">货币设置</h2>
-            
-            <div id="alert" class="alert"></div>
-            
-            <form id="settingsForm">
-                <div class="form-group">
-                    <label class="form-label">货币单位</label>
-                    <div style="display: flex; align-items: center;">
-                        <select id="currencySelect" name="currency" class="form-control">
-                            {{range .currencies}}
-                            <option value="{{.Code}}" data-symbol="{{.Symbol}}" {{if eq $.currency .Code}}selected{{end}}>
-                                {{.Code}} - {{.Name}}
-                            </option>
-                            {{end}}
-                        </select>
-                        <div class="currency-preview">
-                            当前符号: <strong id="symbolPreview">{{.symbol}}</strong>
+        </header>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">主要功能</div>
+                    <a href="/admin/">
+                        <i class="fas fa-tachometer-alt nav-icon"></i>
+                        仪表盘
+                    </a>
+                    <a href="/admin/products">
+                        <i class="fas fa-box nav-icon"></i>
+                        商品管理
+                    </a>
+                    <a href="/admin/orders">
+                        <i class="fas fa-shopping-cart nav-icon"></i>
+                        订单管理
+                    </a>
+                    <a href="/admin/users">
+                        <i class="fas fa-users nav-icon"></i>
+                        用户管理
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">运营工具</div>
+                    <a href="/admin/recharge-cards">
+                        <i class="fas fa-credit-card nav-icon"></i>
+                        充值卡管理
+                    </a>
+                    <a href="/admin/broadcast">
+                        <i class="fas fa-bullhorn nav-icon"></i>
+                        消息推送
+                    </a>
+                    <a href="/admin/faq">
+                        <i class="fas fa-question-circle nav-icon"></i>
+                        FAQ管理
+                    </a>
+                    <a href="/admin/templates">
+                        <i class="fas fa-file-alt nav-icon"></i>
+                        消息模板
+                    </a>
+                    <a href="/admin/tickets">
+                        <i class="fas fa-ticket-alt nav-icon"></i>
+                        工单管理
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">系统</div>
+                    <a href="/admin/settings" class="active">
+                        <i class="fas fa-cog nav-icon"></i>
+                        系统设置
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <h1 class="page-title">系统设置</h1>
+                    <p class="page-subtitle">管理系统配置和参数</p>
+                </div>
+
+            <div id="alert" style="display: none;"></div>
+
+            <div class="settings-grid">
+                <!-- System Core Settings -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-server"></i> 核心系统设置
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="coreSettingsForm">
+                            <div class="setting-group">
+                                <label class="setting-label">管理员访问令牌</label>
+                                <input type="password" name="admin_token" class="form-control" value="{{.coreSettings.admin_token}}" required>
+                                <p class="setting-help">用于访问管理员面板的认证令牌（修改后需要重新登录）</p>
+                            </div>
+
+                            <div class="setting-group">
+                                <label class="setting-label">Telegram Bot Token</label>
+                                <input type="password" name="bot_token" class="form-control" value="{{.coreSettings.bot_token}}" required>
+                                <p class="setting-help">从 @BotFather 获取的机器人令牌（修改后需要重启服务）</p>
+                            </div>
+
+                            <div class="setting-group">
+                                <label class="setting-label">管理员 Telegram ID</label>
+                                <input type="text" name="admin_telegram_ids" class="form-control" value="{{.coreSettings.admin_telegram_ids}}"
+                                       placeholder="7248653199,1234567890">
+                                <p class="setting-help">管理员的 Telegram 用户 ID，多个用逗号分隔。这些用户将自动获得管理员权限并接收系统通知</p>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="card-footer">
+                        <button type="submit" form="coreSettingsForm" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 保存核心设置
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Payment Settings -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-credit-card"></i> 支付网关设置
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="paymentSettingsForm">
+                            <div class="setting-group">
+                                <label class="setting-label">易支付商户ID (PID)</label>
+                                <input type="text" name="epay_pid" class="form-control" value="{{.paymentSettings.epay_pid}}">
+                                <p class="setting-help">易支付商户号，留空则禁用支付功能</p>
+                            </div>
+
+                            <div class="setting-group">
+                                <label class="setting-label">易支付密钥 (KEY)</label>
+                                <input type="password" name="epay_key" class="form-control" value="{{.paymentSettings.epay_key}}">
+                                <p class="setting-help">易支付商户密钥</p>
+                            </div>
+
+                            <div class="setting-group">
+                                <label class="setting-label">易支付网关地址</label>
+                                <input type="url" name="epay_gateway" class="form-control" value="{{.paymentSettings.epay_gateway}}"
+                                       placeholder="https://pay.example.com">
+                                <p class="setting-help">易支付网关的完整URL地址</p>
+                            </div>
+
+                            <div class="setting-group">
+                                <label class="setting-label">回调基础URL</label>
+                                <input type="url" name="base_url" class="form-control" value="{{.paymentSettings.base_url}}"
+                                       placeholder="https://your-domain.com">
+                                <p class="setting-help">您的网站公开访问地址，用于支付回调</p>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="card-footer">
+                        <button type="submit" form="paymentSettingsForm" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 保存支付设置
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Currency Settings -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-money-bill-wave"></i> 货币设置
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="settingsForm">
+                            <div class="setting-group">
+                                <label class="setting-label">货币单位</label>
+                                <div style="display: flex; align-items: center;">
+                                    <select id="currencySelect" name="currency" class="form-control" style="max-width: 300px;">
+                                        {{range .currencies}}
+                                        <option value="{{.Code}}" data-symbol="{{.Symbol}}" {{if eq $.currency .Code}}selected{{end}}>
+                                            {{.Code}} - {{.Name}}
+                                        </option>
+                                        {{end}}
+                                    </select>
+                                    <div class="currency-preview">
+                                        当前符号: <strong id="symbolPreview">{{.symbol}}</strong>
+                                    </div>
+                                </div>
+                                <p class="setting-help">选择系统使用的货币单位，所有价格显示将使用对应的货币符号</p>
+                            </div>
+                            
+                            <input type="hidden" id="symbolInput" name="symbol" value="{{.symbol}}">
+                        </form>
+                    </div>
+                    <div class="card-footer">
+                        <button type="submit" form="settingsForm" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 保存设置
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Order Management Settings -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-shopping-bag"></i> 订单管理设置
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="orderSettingsForm">
+                            <div class="setting-group">
+                                <label class="setting-label">订单过期时间（小时）</label>
+                                <input type="number" id="orderExpireHours" name="order_expire_hours" class="form-control" 
+                                       min="1" max="168" value="{{.orderSettings.order_expire_hours}}" required>
+                                <p class="setting-help">待支付订单超过此时间后将自动过期（默认24小时）</p>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <label class="setting-label">清理过期订单时间（天）</label>
+                                <input type="number" id="orderCleanupDays" name="order_cleanup_days" class="form-control" 
+                                       min="1" max="365" value="{{.orderSettings.order_cleanup_days}}" required>
+                                <p class="setting-help">过期订单超过此天数后将被自动删除（默认7天）</p>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="enableAutoExpire" name="enable_auto_expire" 
+                                           {{if eq .orderSettings.enable_auto_expire "true"}}checked{{end}}>
+                                    <span>启用订单自动过期</span>
+                                </label>
+                                <p class="setting-help">开启后，系统将自动将超时未支付的订单标记为过期</p>
+                            </div>
+                            
+                            <div class="setting-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="enableAutoCleanup" name="enable_auto_cleanup" 
+                                           {{if eq .orderSettings.enable_auto_cleanup "true"}}checked{{end}}>
+                                    <span>启用过期订单自动清理</span>
+                                </label>
+                                <p class="setting-help">开启后，系统将自动删除长时间过期的订单</p>
+                            </div>
+                        </form>
+
+                        <!-- Order Statistics -->
+                        <div class="stats-container">
+                            <h4 style="margin-top: var(--spacing-xl); margin-bottom: var(--spacing-md);">
+                                <i class="fas fa-chart-bar"></i> 订单统计
+                            </h4>
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <div class="stat-label">待支付订单</div>
+                                    <div class="stat-value pending">{{.orderStats.pending}}</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-label">已过期订单</div>
+                                    <div class="stat-value expired">{{.orderStats.expired}}</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-label">已支付订单</div>
+                                    <div class="stat-value paid">{{.orderStats.paid}}</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-label">总订单数</div>
+                                    <div class="stat-value total">{{.orderStats.total}}</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <p class="help-text">选择系统使用的货币单位，所有价格显示将使用对应的货币符号</p>
-                </div>
-                
-                <input type="hidden" id="symbolInput" name="symbol" value="{{.symbol}}">
-                
-                <button type="submit" class="btn-primary">保存设置</button>
-            </form>
-        </div>
-        
-        <div class="settings-card">
-            <h2 class="section-title">订单管理设置</h2>
-            
-            <form id="orderSettingsForm">
-                <div class="form-group">
-                    <label class="form-label">订单过期时间（小时）</label>
-                    <input type="number" id="orderExpireHours" name="order_expire_hours" class="form-control" 
-                           min="1" max="168" value="{{.orderSettings.order_expire_hours}}" required>
-                    <p class="help-text">待支付订单超过此时间后将自动过期（默认24小时）</p>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">清理过期订单时间（天）</label>
-                    <input type="number" id="orderCleanupDays" name="order_cleanup_days" class="form-control" 
-                           min="1" max="365" value="{{.orderSettings.order_cleanup_days}}" required>
-                    <p class="help-text">过期订单超过此天数后将被自动删除（默认7天）</p>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">
-                        <input type="checkbox" id="enableAutoExpire" name="enable_auto_expire" 
-                               {{if eq .orderSettings.enable_auto_expire "true"}}checked{{end}}>
-                        启用订单自动过期
-                    </label>
-                    <p class="help-text">开启后，系统将自动将超时未支付的订单标记为过期</p>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">
-                        <input type="checkbox" id="enableAutoCleanup" name="enable_auto_cleanup" 
-                               {{if eq .orderSettings.enable_auto_cleanup "true"}}checked{{end}}>
-                        启用过期订单自动清理
-                    </label>
-                    <p class="help-text">开启后，系统将自动删除长时间过期的订单</p>
-                </div>
-                
-                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                    <button type="submit" class="btn-primary">保存订单设置</button>
-                    <button type="button" class="btn-primary" style="background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); box-shadow: 0 4px 15px rgba(132, 250, 176, 0.3);" onclick="runExpireNow()">立即执行过期检查</button>
-                    <button type="button" class="btn-primary" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);" onclick="runCleanupNow()">立即清理过期订单</button>
-                </div>
-            </form>
-            
-            <div class="stats-container">
-                <h3>订单统计</h3>
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-label">待支付订单</div>
-                        <div class="stat-value pending">{{.orderStats.pending}}</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">已过期订单</div>
-                        <div class="stat-value expired">{{.orderStats.expired}}</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">已支付订单</div>
-                        <div class="stat-value paid">{{.orderStats.paid}}</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">总订单数</div>
-                        <div class="stat-value total">{{.orderStats.total}}</div>
+                    <div class="card-footer">
+                        <div class="action-buttons">
+                            <button type="submit" form="orderSettingsForm" class="btn btn-primary">
+                                <i class="fas fa-save"></i> 保存订单设置
+                            </button>
+                            <button type="button" class="btn btn-success" onclick="runExpireNow()">
+                                <i class="fas fa-clock"></i> 立即执行过期检查
+                            </button>
+                            <button type="button" class="btn btn-danger" onclick="runCleanupNow()">
+                                <i class="fas fa-trash"></i> 立即清理过期订单
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+            </div>
+        </main>
     </div>
     
+    <!-- Scripts -->
     <script>
-        // 更新货币符号预览
+        // Theme Toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Load saved theme
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        });
+
+        // Logout function
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                fetch('/api/logout', { method: 'POST' })
+                    .then(() => window.location.href = '/')
+                    .catch(err => console.error('Logout failed:', err));
+            }
+        }
+        
+        // Update currency symbol preview
         document.getElementById('currencySelect').addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
             const symbol = selectedOption.getAttribute('data-symbol');
             document.getElementById('symbolPreview').textContent = symbol;
             document.getElementById('symbolInput').value = symbol;
         });
-        
-        // 提交表单
+
+        // Submit core settings
+        document.getElementById('coreSettingsForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const data = {
+                admin_token: formData.get('admin_token'),
+                bot_token: formData.get('bot_token'),
+                admin_telegram_ids: formData.get('admin_telegram_ids')
+            };
+
+            try {
+                const response = await fetch('/admin/api/settings/core', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const alert = document.getElementById('alert');
+
+                if (response.ok) {
+                    alert.className = 'alert alert-success';
+                    alert.innerHTML = '<i class="fas fa-check-circle"></i> 核心设置已保存。如果修改了Bot Token，请重启服务以生效。';
+                    alert.style.display = 'block';
+                    setTimeout(() => alert.style.display = 'none', 5000);
+                } else {
+                    const result = await response.json();
+                    alert.className = 'alert alert-danger';
+                    alert.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (result.error || '保存失败');
+                    alert.style.display = 'block';
+                }
+            } catch (error) {
+                const alert = document.getElementById('alert');
+                alert.className = 'alert alert-danger';
+                alert.innerHTML = '<i class="fas fa-exclamation-circle"></i> 网络错误: ' + error.message;
+                alert.style.display = 'block';
+            }
+        });
+
+        // Submit payment settings
+        document.getElementById('paymentSettingsForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const data = {
+                epay_pid: formData.get('epay_pid'),
+                epay_key: formData.get('epay_key'),
+                epay_gateway: formData.get('epay_gateway'),
+                base_url: formData.get('base_url')
+            };
+
+            try {
+                const response = await fetch('/admin/api/settings/payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const alert = document.getElementById('alert');
+
+                if (response.ok) {
+                    alert.className = 'alert alert-success';
+                    alert.innerHTML = '<i class="fas fa-check-circle"></i> 支付设置已保存';
+                    alert.style.display = 'block';
+                    setTimeout(() => alert.style.display = 'none', 3000);
+                } else {
+                    const result = await response.json();
+                    alert.className = 'alert alert-danger';
+                    alert.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (result.error || '保存失败');
+                    alert.style.display = 'block';
+                }
+            } catch (error) {
+                const alert = document.getElementById('alert');
+                alert.className = 'alert alert-danger';
+                alert.innerHTML = '<i class="fas fa-exclamation-circle"></i> 网络错误: ' + error.message;
+                alert.style.display = 'block';
+            }
+        });
+
+        // Submit currency settings
         document.getElementById('settingsForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
+
             const formData = new FormData(this);
             const data = {
                 currency: formData.get('currency'),
                 symbol: formData.get('symbol')
             };
-            
+
             try {
                 const response = await fetch('/admin/settings', {
                     method: 'POST',
@@ -546,33 +544,32 @@
                     },
                     body: JSON.stringify(data)
                 });
-                
+
                 const result = await response.json();
                 const alert = document.getElementById('alert');
-                
+
                 if (response.ok) {
-                    alert.className = 'alert success';
-                    alert.textContent = result.message || '设置已保存';
+                    alert.className = 'alert alert-success';
+                    alert.innerHTML = '<i class="fas fa-check-circle"></i> ' + (result.message || '设置已保存');
                     alert.style.display = 'block';
-                    
-                    // 3秒后刷新页面以应用新设置
+
                     setTimeout(() => {
                         window.location.reload();
                     }, 1500);
                 } else {
-                    alert.className = 'alert error';
-                    alert.textContent = result.error || '保存失败';
+                    alert.className = 'alert alert-danger';
+                    alert.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (result.error || '保存失败');
                     alert.style.display = 'block';
                 }
             } catch (error) {
                 const alert = document.getElementById('alert');
-                alert.className = 'alert error';
-                alert.textContent = '网络错误: ' + error.message;
+                alert.className = 'alert alert-danger';
+                alert.innerHTML = '<i class="fas fa-exclamation-circle"></i> 网络错误: ' + error.message;
                 alert.style.display = 'block';
             }
         });
         
-        // 提交订单设置表单
+        // Submit order settings
         document.getElementById('orderSettingsForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -597,25 +594,25 @@
                 const alert = document.getElementById('alert');
                 
                 if (response.ok) {
-                    alert.className = 'alert success';
-                    alert.textContent = '订单设置已保存';
+                    alert.className = 'alert alert-success';
+                    alert.innerHTML = '<i class="fas fa-check-circle"></i> 订单设置已保存';
                     alert.style.display = 'block';
                     setTimeout(() => alert.style.display = 'none', 3000);
                 } else {
                     const result = await response.json();
-                    alert.className = 'alert error';
-                    alert.textContent = result.error || '保存失败';
+                    alert.className = 'alert alert-danger';
+                    alert.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (result.error || '保存失败');
                     alert.style.display = 'block';
                 }
             } catch (error) {
                 const alert = document.getElementById('alert');
-                alert.className = 'alert error';
-                alert.textContent = '网络错误: ' + error.message;
+                alert.className = 'alert alert-danger';
+                alert.innerHTML = '<i class="fas fa-exclamation-circle"></i> 网络错误: ' + error.message;
                 alert.style.display = 'block';
             }
         });
         
-        // 立即执行过期检查
+        // Run expire check immediately
         async function runExpireNow() {
             if (!confirm('确定要立即执行订单过期检查吗？')) return;
             
@@ -631,24 +628,24 @@
                 
                 if (response.ok) {
                     const result = await response.json();
-                    alert.className = 'alert success';
-                    alert.textContent = `已将 ${result.count} 个订单标记为过期`;
+                    alert.className = 'alert alert-success';
+                    alert.innerHTML = `<i class="fas fa-check-circle"></i> 已将 ${result.count} 个订单标记为过期`;
                     alert.style.display = 'block';
                     setTimeout(() => window.location.reload(), 2000);
                 } else {
-                    alert.className = 'alert error';
-                    alert.textContent = '执行失败';
+                    alert.className = 'alert alert-danger';
+                    alert.innerHTML = '<i class="fas fa-exclamation-circle"></i> 执行失败';
                     alert.style.display = 'block';
                 }
             } catch (error) {
                 const alert = document.getElementById('alert');
-                alert.className = 'alert error';
-                alert.textContent = '网络错误: ' + error.message;
+                alert.className = 'alert alert-danger';
+                alert.innerHTML = '<i class="fas fa-exclamation-circle"></i> 网络错误: ' + error.message;
                 alert.style.display = 'block';
             }
         }
         
-        // 立即清理过期订单
+        // Run cleanup immediately
         async function runCleanupNow() {
             if (!confirm('确定要立即清理过期订单吗？此操作不可恢复！')) return;
             
@@ -664,28 +661,20 @@
                 
                 if (response.ok) {
                     const result = await response.json();
-                    alert.className = 'alert success';
-                    alert.textContent = `已清理 ${result.count} 个过期订单`;
+                    alert.className = 'alert alert-success';
+                    alert.innerHTML = `<i class="fas fa-check-circle"></i> 已清理 ${result.count} 个过期订单`;
                     alert.style.display = 'block';
                     setTimeout(() => window.location.reload(), 2000);
                 } else {
-                    alert.className = 'alert error';
-                    alert.textContent = '清理失败';
+                    alert.className = 'alert alert-danger';
+                    alert.innerHTML = '<i class="fas fa-exclamation-circle"></i> 清理失败';
                     alert.style.display = 'block';
                 }
             } catch (error) {
                 const alert = document.getElementById('alert');
-                alert.className = 'alert error';
-                alert.textContent = '网络错误: ' + error.message;
+                alert.className = 'alert alert-danger';
+                alert.innerHTML = '<i class="fas fa-exclamation-circle"></i> 网络错误: ' + error.message;
                 alert.style.display = 'block';
-            }
-        }
-    </script>
-    <script src="/static/theme.js"></script>
-    <script>
-        function toggleTheme() {
-            if (window.themeManager) {
-                window.themeManager.toggleTheme();
             }
         }
     </script>

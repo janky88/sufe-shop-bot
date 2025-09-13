@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html data-theme="light">
+<head>
+    <title>仪表盘 - 商城机器人管理中心</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="stylesheet" href="/static/css/theme.css?v=2">
+    <link rel="stylesheet" href="/static/css/components.css?v=2">
+    <link rel="stylesheet" href="/static/css/layout.css?v=1">
+    <link rel="stylesheet" href="/static/css/layout.css?v=1">
+    <link rel="stylesheet" href="/static/css/pages/dashboard.css?v=2">
+    <script>
+    function logout() {
+        fetch('/api/logout', { method: 'POST' })
+            .then(() => window.location.href = '/')
+            .catch(err => console.error('Logout failed:', err));
+    }
+    </script>
+    <link rel="stylesheet" href="/static/ui-enhancements.css?v=1">
+</head>
+<body class="page-container aurora-background">
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">商城机器人管理中心</div>
+            <div class="header-actions">
+                <button class="theme-toggle" onclick="toggleTheme()" title="切换主题 (Ctrl+Shift+T)">
+                    <span class="theme-toggle-icon sun">☀️</span>
+                    <span class="theme-toggle-icon moon">🌙</span>
+                </button>
+                <button class="btn btn-danger" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="nav">
+            <a href="/admin/" class="active">仪表盘</a>
+            <a href="/admin/products">商品管理</a>
+            <a href="/admin/orders">订单管理</a>
+            <a href="/admin/users">用户管理</a>
+            <a href="/admin/recharge-cards">充值卡管理</a>
+            <a href="/admin/broadcast">消息推送</a>
+            <a href="/admin/faq">FAQ管理</a>
+            <a href="/admin/templates">消息模板</a>
+            <a href="/admin/settings">系统设置</a>
+        </div>
+        
+        <h1 class="page-title">仪表盘</h1>
+        
+        <div class="quick-actions">
+            <a href="/admin/products" class="btn">商品管理</a>
+            <a href="/admin/orders" class="btn btn-success">订单管理</a>
+            <a href="/admin/broadcast" class="btn btn-danger">发送广播</a>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <canvas class="stat-chart" width="100" height="40" data-type="line" data-values="[10,15,12,20,18,25,30]" data-color="#667eea"></canvas>
+                <div class="stat-value">{{.stats.TotalUsers}}</div>
+                <div class="stat-label">总用户数</div>
+                <div class="stat-trend positive">↑ 12.5%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{.stats.TotalProducts}}</div>
+                <div class="stat-label">商品数量</div>
+            </div>
+            <div class="stat-card">
+                <canvas class="stat-chart" width="100" height="40" data-type="bar" data-values="[5,8,6,10,12,15,18]" data-color="#10b981"></canvas>
+                <div class="stat-value">{{.stats.TotalOrders}}</div>
+                <div class="stat-label">总订单数</div>
+                <div class="stat-trend positive">↑ 8.2%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{.currency}}{{printf "%.2f" (divf .stats.TotalRevenue 100)}}</div>
+                <div class="stat-label">总收入</div>
+            </div>
+            <div class="stat-card">
+                <canvas class="stat-chart" width="100" height="40" data-type="line" data-values="[2,3,5,4,6,8,10]" data-color="#fb923c"></canvas>
+                <div class="stat-value">{{.stats.TodayOrders}}</div>
+                <div class="stat-label">今日订单</div>
+                <div class="stat-trend negative">↓ 3.1%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{.currency}}{{printf "%.2f" (divf .stats.TodayRevenue 100)}}</div>
+                <div class="stat-label">今日收入</div>
+            </div>
+        </div>
+        
+        <div class="charts-section">
+            <div class="chart-container glass-card">
+                <h3 class="chart-title">销售趋势</h3>
+                <canvas id="salesChart" width="400" height="200"></canvas>
+            </div>
+            <div class="chart-container glass-card">
+                <h3 class="chart-title">订单状态分布</h3>
+                <canvas id="ordersChart" width="300" height="200"></canvas>
+            </div>
+            <div class="chart-container glass-card">
+                <h3 class="chart-title">产品销售占比</h3>
+                <canvas id="productsChart" width="300" height="200"></canvas>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2 class="section-title">最近订单</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>订单号</th>
+                            <th>用户</th>
+                            <th>商品</th>
+                            <th>金额</th>
+                            <th>状态</th>
+                            <th>时间</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .recent_orders}}
+                        <tr>
+                            <td>#{{.ID}}</td>
+                            <td>{{.User.Username}}</td>
+                            <td>
+                                {{if .Product}}
+                                    {{.Product.Name}}
+                                {{else}}
+                                    余额充值
+                                {{end}}
+                            </td>
+                            <td>{{$.currency}}{{printf "%.2f" (divf .AmountCents 100)}}</td>
+                            <td>
+                                {{if eq .Status "pending"}}
+                                    <span class="status-badge status-pending">待支付</span>
+                                {{else if eq .Status "paid"}}
+                                    <span class="status-badge status-paid">已支付</span>
+                                {{else if eq .Status "delivered"}}
+                                    <span class="status-badge status-delivered">已发货</span>
+                                {{else}}
+                                    <span class="status-badge">{{.Status}}</span>
+                                {{end}}
+                            </td>
+                            <td>{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/theme.js"></script>
+    <script src="/static/ui-enhancements.js"></script>
+    <script src="/static/charts.js"></script>
+    <script>
+        // Theme toggle function
+        function toggleTheme() {
+            if (window.themeManager) {
+                window.themeManager.toggleTheme();
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工单管理 - 商城机器人管理中心</title>
+    
+    <!-- Modern CSS -->
+    <link rel="stylesheet" href="/static/css/modern-theme.css?v=2">
+    <link rel="stylesheet" href="/static/css/modern-components.css?v=2">
+    <link rel="stylesheet" href="/static/css/modern-layout.css?v=2">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        .ticket-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .stat-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            transition: all 0.2s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        .ticket-filters {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+            flex-wrap: wrap;
+        }
+        
+        .filter-tab {
+            padding: var(--spacing-sm) var(--spacing-lg);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+        
+        .filter-tab:hover {
+            background: var(--bg-hover);
+        }
+        
+        .filter-tab.active {
+            background: var(--primary-600);
+            color: white;
+            border-color: var(--primary-600);
+        }
+        
+        .ticket-row {
+            display: flex;
+            align-items: center;
+            padding: var(--spacing-md) 0;
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.2s ease;
+        }
+        
+        .ticket-row:hover {
+            background: var(--bg-hover);
+        }
+        
+        .ticket-id {
+            font-weight: 600;
+            color: var(--primary-600);
+        }
+        
+        .ticket-user {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+        
+        .ticket-time {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+        
+        .unread-indicator {
+            width: 8px;
+            height: 8px;
+            background: var(--danger-600);
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: var(--spacing-xs);
+        }
+        
+        .status-badge {
+            padding: 2px 8px;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .status-badge.open {
+            background: var(--warning-100);
+            color: var(--warning-700);
+        }
+        
+        .status-badge.in_progress {
+            background: var(--info-100);
+            color: var(--info-700);
+        }
+        
+        .status-badge.resolved {
+            background: var(--success-100);
+            color: var(--success-700);
+        }
+        
+        .status-badge.closed {
+            background: var(--gray-100);
+            color: var(--gray-700);
+        }
+        
+        .priority-badge {
+            padding: 2px 8px;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .priority-badge.urgent {
+            background: var(--danger-100);
+            color: var(--danger-700);
+        }
+        
+        .priority-badge.high {
+            background: var(--warning-100);
+            color: var(--warning-700);
+        }
+        
+        .priority-badge.normal {
+            background: var(--info-100);
+            color: var(--info-700);
+        }
+        
+        .priority-badge.low {
+            background: var(--gray-100);
+            color: var(--gray-700);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-3xl) var(--spacing-xl);
+            color: var(--text-secondary);
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: var(--spacing-lg);
+            opacity: 0.5;
+        }
+
+        /* Table styles improvement - Override external CSS */
+        .table {
+            width: 100% !important;
+            min-width: 1100px !important;
+            border-collapse: collapse !important;
+            background: var(--bg-primary) !important;
+            table-layout: auto !important;
+            display: table !important;
+        }
+
+        .table thead {
+            display: table-header-group !important;
+        }
+
+        .table tbody {
+            display: table-row-group !important;
+        }
+
+        .table tr {
+            display: table-row !important;
+        }
+
+        .table th,
+        .table td {
+            display: table-cell !important;
+            padding: 12px 16px !important;
+            vertical-align: middle !important;
+            border-bottom: 1px solid var(--border-color) !important;
+        }
+
+        .table th {
+            font-weight: 600 !important;
+            text-align: left !important;
+            background: var(--bg-secondary) !important;
+            border-bottom: 2px solid var(--border-color) !important;
+            color: var(--text-primary) !important;
+            font-size: 0.875rem !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.05em !important;
+        }
+
+        .table td {
+            border-right: 1px solid var(--border-color) !important;
+            color: var(--text-primary) !important;
+        }
+
+        .table td:last-child {
+            border-right: none !important;
+        }
+
+        .table tbody tr {
+            transition: background 0.2s;
+        }
+
+        .table tbody tr:hover {
+            background: var(--bg-secondary) !important;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 0 -1px;
+        }
+
+        .ticket-row {
+            display: table-row !important;
+        }
+
+        .ticket-row td {
+            /* Remove white-space: nowrap to allow proper column separation */
+            vertical-align: middle !important;
+        }
+
+        .ticket-id {
+            font-family: monospace;
+            font-weight: 600;
+            color: var(--primary-color);
+            white-space: nowrap;
+        }
+
+        .ticket-user {
+            /* Remove flex to prevent layout issues */
+            line-height: 1.4;
+        }
+
+        .ticket-user span {
+            display: block;
+        }
+
+        .ticket-user span:first-child {
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .ticket-user .ticket-time {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .ticket-time {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        @media (max-width: 1200px) {
+            .table {
+                font-size: 0.875rem;
+            }
+
+            .table th,
+            .table td {
+                padding: 10px 12px;
+            }
+        }
+
+        /* Ensure minimum widths for columns */
+        .table th:nth-child(1),
+        .table td:nth-child(1) { min-width: 140px; } /* 工单号 */
+
+        .table th:nth-child(2),
+        .table td:nth-child(2) { min-width: 150px; } /* 用户 */
+
+        .table th:nth-child(3),
+        .table td:nth-child(3) { min-width: 200px; } /* 主题 */
+
+        .table th:nth-child(4),
+        .table td:nth-child(4) { min-width: 80px; }  /* 状态 */
+
+        .table th:nth-child(5),
+        .table td:nth-child(5) { min-width: 80px; }  /* 优先级 */
+
+        .table th:nth-child(6),
+        .table td:nth-child(6) { min-width: 100px; } /* 分配给 */
+
+        .table th:nth-child(7),
+        .table td:nth-child(7) { min-width: 100px; } /* 最后回复 */
+
+        .table th:nth-child(8),
+        .table td:nth-child(8) { min-width: 120px; } /* 创建时间 */
+
+        .table th:nth-child(9),
+        .table td:nth-child(9) { min-width: 80px; }  /* 操作 */
+
+        /* Status and Priority badges */
+        .status-badge,
+        .priority-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-badge.open {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-badge.in_progress {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-badge.resolved {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-badge.closed {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .priority-badge.urgent {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .priority-badge.high {
+            background: #fed7aa;
+            color: #9a3412;
+        }
+
+        .priority-badge.normal {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .priority-badge.low {
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                    商城机器人管理中心
+                </div>
+                <div class="header-actions">
+                    <button class="theme-toggle" onclick="toggleTheme()">
+                        <i class="fas fa-sun sun-icon theme-toggle-icon"></i>
+                        <i class="fas fa-moon moon-icon theme-toggle-icon"></i>
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        退出登录
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">主要功能</div>
+                    <a href="/admin/">
+                        <i class="fas fa-tachometer-alt nav-icon"></i>
+                        仪表盘
+                    </a>
+                    <a href="/admin/products">
+                        <i class="fas fa-box nav-icon"></i>
+                        商品管理
+                    </a>
+                    <a href="/admin/orders">
+                        <i class="fas fa-shopping-cart nav-icon"></i>
+                        订单管理
+                    </a>
+                    <a href="/admin/users">
+                        <i class="fas fa-users nav-icon"></i>
+                        用户管理
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">运营工具</div>
+                    <a href="/admin/recharge-cards">
+                        <i class="fas fa-credit-card nav-icon"></i>
+                        充值卡管理
+                    </a>
+                    <a href="/admin/broadcast">
+                        <i class="fas fa-bullhorn nav-icon"></i>
+                        消息推送
+                    </a>
+                    <a href="/admin/faq">
+                        <i class="fas fa-question-circle nav-icon"></i>
+                        FAQ管理
+                    </a>
+                    <a href="/admin/templates">
+                        <i class="fas fa-file-alt nav-icon"></i>
+                        消息模板
+                    </a>
+                    <a href="/admin/tickets" class="active">
+                        <i class="fas fa-ticket-alt nav-icon"></i>
+                        工单管理
+                        {{if gt .stats.UnreadMessages 0}}
+                        <span class="unread-indicator"></span>
+                        {{end}}
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">系统</div>
+                    <a href="/admin/settings">
+                        <i class="fas fa-cog nav-icon"></i>
+                        系统设置
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <h1 class="page-title">工单管理</h1>
+                    
+                    <div class="page-actions">
+                        <a href="/admin/ticket-templates" class="btn btn-secondary">
+                            <i class="fas fa-file-alt"></i> 快捷回复模板
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Statistics -->
+                <div class="ticket-stats">
+                    <div class="stat-card">
+                        <div class="stat-value">{{.stats.TotalTickets}}</div>
+                        <div class="stat-label">总工单数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value text-warning">{{.stats.OpenTickets}}</div>
+                        <div class="stat-label">待处理</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value text-info">{{.stats.InProgress}}</div>
+                        <div class="stat-label">处理中</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value text-success">{{.stats.ResolvedTickets}}</div>
+                        <div class="stat-label">已解决</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value text-danger">{{.stats.UnreadMessages}}</div>
+                        <div class="stat-label">未读消息</div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="ticket-filters">
+                    <a href="/admin/tickets?status=all" class="filter-tab {{if eq .status "all"}}active{{end}}">
+                        全部
+                    </a>
+                    <a href="/admin/tickets?status=open" class="filter-tab {{if eq .status "open"}}active{{end}}">
+                        待处理
+                    </a>
+                    <a href="/admin/tickets?status=in_progress" class="filter-tab {{if eq .status "in_progress"}}active{{end}}">
+                        处理中
+                    </a>
+                    <a href="/admin/tickets?status=resolved" class="filter-tab {{if eq .status "resolved"}}active{{end}}">
+                        已解决
+                    </a>
+                    <a href="/admin/tickets?status=closed" class="filter-tab {{if eq .status "closed"}}active{{end}}">
+                        已关闭
+                    </a>
+                </div>
+
+                <!-- Tickets Table -->
+                <div class="content-section">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>工单号</th>
+                                    <th>用户</th>
+                                    <th>主题</th>
+                                    <th>状态</th>
+                                    <th>优先级</th>
+                                    <th>分配给</th>
+                                    <th>最后回复</th>
+                                    <th>创建时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{range .tickets}}
+                                <tr class="ticket-row">
+                                    <td>
+                                        <span class="ticket-id">{{.TicketID}}</span>
+                                    </td>
+                                    <td>
+                                        <div class="ticket-user">
+                                            <span>{{.Username}}</span>
+                                            <span class="ticket-time">({{.UserID}})</span>
+                                        </div>
+                                    </td>
+                                    <td>{{.Subject}}</td>
+                                    <td>
+                                        <span class="status-badge {{.Status}}">
+                                            {{if eq .Status "open"}}待处理{{end}}
+                                            {{if eq .Status "in_progress"}}处理中{{end}}
+                                            {{if eq .Status "resolved"}}已解决{{end}}
+                                            {{if eq .Status "closed"}}已关闭{{end}}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="priority-badge {{.Priority}}">
+                                            {{if eq .Priority "urgent"}}紧急{{end}}
+                                            {{if eq .Priority "high"}}高{{end}}
+                                            {{if eq .Priority "normal"}}普通{{end}}
+                                            {{if eq .Priority "low"}}低{{end}}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {{if .AssignedBy}}
+                                            {{.AssignedBy.Username}}
+                                        {{else}}
+                                            <span class="text-secondary">未分配</span>
+                                        {{end}}
+                                    </td>
+                                    <td>
+                                        {{if .LastReplyAt}}
+                                            <span class="ticket-time">{{.LastReplyAt.Format "01-02 15:04"}}</span>
+                                        {{else}}
+                                            -
+                                        {{end}}
+                                    </td>
+                                    <td>
+                                        <span class="ticket-time">{{.CreatedAt.Format "01-02 15:04"}}</span>
+                                    </td>
+                                    <td>
+                                        <a href="/admin/tickets/{{.ID}}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-eye"></i> 查看
+                                        </a>
+                                    </td>
+                                </tr>
+                                {{else}}
+                                <tr>
+                                    <td colspan="9">
+                                        <div class="empty-state">
+                                            <i class="fas fa-ticket-alt"></i>
+                                            <p>暂无工单记录</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {{if gt .total 0}}
+                    <div class="pagination">
+                        {{if gt .page 1}}
+                        <a href="/admin/tickets?page={{minus .page 1}}&status={{.status}}" class="pagination-link">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                        {{end}}
+                        
+                        <span class="pagination-info">
+                            第 {{.page}} 页，共 {{divf .total .limit | int | plus 1}} 页
+                        </span>
+                        
+                        {{if lt (multiply .page .limit) .total}}
+                        <a href="/admin/tickets?page={{plus .page 1}}&status={{.status}}" class="pagination-link">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                        {{end}}
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Scripts -->
+    <script>
+        // Theme Toggle
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Load saved theme
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            
+            // Auto-refresh every 30 seconds to check for new messages
+            setInterval(() => {
+                if (window.location.pathname === '/admin/tickets') {
+                    window.location.reload();
+                }
+            }, 30000);
+        });
+        
+        // Logout function
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                fetch('/api/logout', { method: 'POST' })
+                    .then(() => window.location.href = '/')
+                    .catch(err => console.error('Logout failed:', err));
+            }
+        }
+    </script>
+</body>
+</html>

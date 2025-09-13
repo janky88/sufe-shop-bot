@@ -5,402 +5,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#ffffff">
-    <link rel="stylesheet" href="/static/css/theme.css">
-    <style>
-        /* Modern UI Base Styles with Aurora Gradient */
-        * { 
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        
-        :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --aurora-gradient: linear-gradient(
-                45deg,
-                rgba(102, 126, 234, 0.1) 0%,
-                rgba(118, 75, 162, 0.1) 25%,
-                rgba(255, 154, 139, 0.1) 50%,
-                rgba(255, 206, 84, 0.1) 75%,
-                rgba(102, 126, 234, 0.1) 100%
-            );
-        }
-        
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
-        }
-        
-        /* Aurora Background Animation */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: 
-                radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 40% 20%, rgba(255, 154, 139, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 70% 30%, rgba(255, 206, 84, 0.2) 0%, transparent 50%);
-            animation: aurora 20s ease-in-out infinite;
-            z-index: -1;
-        }
-        
-        @keyframes aurora {
-            0%, 100% { transform: rotate(0deg) scale(1); }
-            25% { transform: rotate(5deg) scale(1.1); }
-            50% { transform: rotate(-5deg) scale(1); }
-            75% { transform: rotate(3deg) scale(1.05); }
-        }
-        
-        /* Glassmorphism Header */
-        .header {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--glass-border);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            box-shadow: 0 8px 32px var(--shadow-color);
-        }
-        
-        .header::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: var(--aurora-gradient);
-            opacity: 0.5;
-            animation: shimmer 3s ease-in-out infinite;
-        }
-        
-        @keyframes shimmer {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 0.8; }
-        }
-        
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 70px;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .logo {
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.5px;
-        }
-        
-        .logout-btn {
-            padding: 10px 24px;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
-        }
-        
-        .logout-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
-        }
-        
-        .container { 
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 24px;
-        }
-        
-        /* Glass Navigation */
-        .nav { 
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 8px;
-            margin-bottom: 24px;
-            box-shadow: 0 8px 32px var(--shadow-color);
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            scrollbar-width: none;
-        }
-        
-        .nav::-webkit-scrollbar {
-            display: none;
-        }
-        
-        .nav a { 
-            flex: 0 0 auto;
-            padding: 12px 24px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            text-align: center;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-            font-weight: 500;
-            white-space: nowrap;
-        }
-        
-        .nav a:hover { 
-            background: var(--glass-bg);
-            color: var(--text-primary);
-        }
-        
-        .nav a.active {
-            background: var(--primary-gradient);
-            color: white;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        }
-        
-        /* Breadcrumb */
-        .breadcrumb {
-            margin-bottom: 24px;
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-        
-        .breadcrumb a {
-            color: #667eea;
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-        
-        .breadcrumb a:hover {
-            color: #764ba2;
-        }
-        
-        /* User Info Card */
-        .user-info-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 32px;
-            margin-bottom: 32px;
-            box-shadow: 0 8px 32px var(--shadow-color);
-        }
-        
-        .user-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 32px;
-        }
-        
-        .user-basic {
-            flex: 1;
-        }
-        
-        .user-name {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .user-id {
-            font-size: 16px;
-            color: var(--text-secondary);
-        }
-        
-        .balance-section {
-            text-align: right;
-        }
-        
-        .balance-label {
-            font-size: 14px;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-        }
-        
-        .balance-value {
-            font-size: 36px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .user-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 24px;
-        }
-        
-        .detail-item {
-            padding: 20px;
-            background: var(--hover-bg);
-            border-radius: 12px;
-        }
-        
-        .detail-label {
-            font-size: 14px;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-        }
-        
-        .detail-value {
-            font-size: 18px;
-            font-weight: 500;
-            color: var(--text-primary);
-        }
-        
-        /* Section Title */
-        .section-title {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 24px;
-            color: var(--text-primary);
-        }
-        
-        /* Table Container */
-        .table-container {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 8px 32px var(--shadow-color);
-            margin-bottom: 32px;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        th {
-            background: var(--hover-bg);
-            padding: 16px;
-            text-align: left;
-            font-weight: 600;
-            color: var(--text-primary);
-            border-bottom: 1px solid var(--glass-border);
-        }
-        
-        td {
-            padding: 16px;
-            border-bottom: 1px solid var(--hover-bg);
-            color: var(--text-primary);
-        }
-        
-        tr:hover {
-            background: rgba(255, 255, 255, 0.02);
-        }
-        
-        /* Status Badges */
-        .status {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-            display: inline-block;
-        }
-        
-        .status.pending {
-            background: rgba(255, 206, 84, 0.2);
-            color: #ffce54;
-        }
-        
-        .status.paid {
-            background: rgba(132, 250, 176, 0.2);
-            color: #84fab0;
-        }
-        
-        .status.delivered {
-            background: rgba(143, 211, 244, 0.2);
-            color: #8fd3f4;
-        }
-        
-        .status.paid_no_stock {
-            background: rgba(255, 154, 139, 0.2);
-            color: #ff9a8b;
-        }
-        
-        .status.failed_delivery {
-            background: rgba(245, 87, 108, 0.2);
-            color: #f5576c;
-        }
-        
-        .status.expired {
-            background: rgba(255, 154, 139, 0.2);
-            color: #ff9a8b;
-        }
-        
-        /* Code Text */
-        .code-text {
-            font-family: 'Courier New', monospace;
-            background: var(--hover-bg);
-            padding: 4px 8px;
-            border-radius: 6px;
-            white-space: pre-wrap;
-            word-break: break-all;
-            display: inline-block;
-            max-width: 300px;
-            margin: 0;
-            cursor: pointer;
-            font-size: 12px;
-            color: var(--text-primary);
-        }
-        
-        .code-text:hover {
-            background: var(--glass-bg);
-        }
-        
-        .order-id {
-            font-weight: 600;
-            color: #667eea;
-        }
-        
-        .amount {
-            font-weight: 600;
-            color: #84fab0;
-        }
-        
-        /* Responsive */
-        @media (max-width: 768px) {
-            .user-header {
-                flex-direction: column;
-                gap: 24px;
-            }
-            
-            .balance-section {
-                text-align: left;
-            }
-            
-            .user-details {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="/static/css/theme.css?v=2">
+    <link rel="stylesheet" href="/static/css/components.css?v=2">
+    <link rel="stylesheet" href="/static/css/layout.css?v=1">
+    <link rel="stylesheet" href="/static/css/pages/user-detail.css">
     <script>
     function logout() {
         fetch('/api/logout', { method: 'POST' })
@@ -416,17 +24,18 @@
         });
     }
     </script>
+    <link rel="stylesheet" href="/static/ui-enhancements.css">
 </head>
-<body>
+<body class="page-container aurora-background">
     <div class="header">
         <div class="header-content">
             <div class="logo">商城机器人管理中心</div>
-            <div style="display: flex; align-items: center; gap: 16px;">
+            <div class="header-actions">
                 <button class="theme-toggle" onclick="toggleTheme()" title="切换主题 (Ctrl+Shift+T)">
                     <span class="theme-toggle-icon sun">☀️</span>
                     <span class="theme-toggle-icon moon">🌙</span>
                 </button>
-                <button class="logout-btn" onclick="logout()">退出登录</button>
+                <button class="btn btn-danger" onclick="logout()">退出登录</button>
             </div>
         </div>
     </div>
@@ -441,6 +50,7 @@
             <a href="/admin/broadcast">消息推送</a>
             <a href="/admin/faq">FAQ管理</a>
             <a href="/admin/templates">消息模板</a>
+            <a href="/admin/tickets">工单管理</a>
             <a href="/admin/settings">系统设置</a>
         </div>
         
@@ -450,39 +60,39 @@
         
         <div class="user-info-card">
             <div class="user-header">
-                <div class="user-basic">
+                <div class="user-basic-info">
                     <h1 class="user-name">{{.user.Username}}</h1>
-                    <div class="user-id">用户ID: {{.user.ID}} | Telegram ID: {{.user.TgUserID}}</div>
+                    <div class="user-id-display">用户ID: {{.user.ID}} | Telegram ID: {{.user.TgUserID}}</div>
                 </div>
-                <div class="balance-section">
+                <div class="user-balance-section">
                     <div class="balance-label">账户余额</div>
                     <div class="balance-value">{{.currency}}{{printf "%.2f" (divf .user.BalanceCents 100)}}</div>
                 </div>
             </div>
             
-            <div class="user-details">
-                <div class="detail-item">
-                    <div class="detail-label">注册时间</div>
-                    <div class="detail-value">{{.user.CreatedAt.Format "2006-01-02 15:04:05"}}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">最后活跃</div>
-                    <div class="detail-value">{{.user.UpdatedAt.Format "2006-01-02 15:04:05"}}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">订单总数</div>
-                    <div class="detail-value">{{.orderCount}}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-label">消费总额</div>
-                    <div class="detail-value">{{.currency}}{{printf "%.2f" (divf .totalSpent 100)}}</div>
-                </div>
+            <div class="user-details-grid">
+                    <div class="detail-item">
+                        <label>注册时间</label>
+                        <span>{{.user.CreatedAt.Format "2006-01-02 15:04:05"}}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>最后活跃</label>
+                        <span>{{.user.UpdatedAt.Format "2006-01-02 15:04:05"}}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>订单总数</label>
+                        <span>{{.orderCount}}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>消费总额</label>
+                        <span>{{.currency}}{{printf "%.2f" (divf .totalSpent 100)}}</span>
+                    </div>
             </div>
         </div>
         
-        <h2 class="section-title">订单记录</h2>
-        
-        <div class="table-container">
+        <div class="orders-section">
+            <h2 class="section-title">订单记录</h2>
+            <div class="table-wrapper">
             <table>
                 <thead>
                     <tr>
@@ -500,22 +110,22 @@
                     <tr>
                         <td><span class="order-id">#{{.ID}}</span></td>
                         <td>{{if .Product}}{{.Product.Name}}{{else}}余额充值{{end}}</td>
-                        <td class="amount">{{$.currency}}{{printf "%.2f" (divf .AmountCents 100)}}</td>
+                        <td class="order-amount">{{$.currency}}{{printf "%.2f" (divf .AmountCents 100)}}</td>
                         <td>
                             {{if eq .Status "pending"}}
-                                <span class="status pending">待支付</span>
+                                <span class="order-status pending">待支付</span>
                             {{else if eq .Status "paid"}}
-                                <span class="status paid">已支付</span>
+                                <span class="order-status paid">已支付</span>
                             {{else if eq .Status "delivered"}}
-                                <span class="status delivered">已发货</span>
+                                <span class="order-status delivered">已发货</span>
                             {{else if eq .Status "paid_no_stock"}}
-                                <span class="status paid_no_stock">缺货</span>
+                                <span class="order-status paid_no_stock">缺货</span>
                             {{else if eq .Status "failed_delivery"}}
-                                <span class="status failed_delivery">发货失败</span>
+                                <span class="order-status failed_delivery">发货失败</span>
                             {{else if eq .Status "expired"}}
-                                <span class="status expired">已过期</span>
+                                <span class="order-status expired">已过期</span>
                             {{else}}
-                                <span class="status">{{.Status}}</span>
+                                <span class="order-status">{{.Status}}</span>
                             {{end}}
                         </td>
                         <td>
@@ -532,9 +142,11 @@
                     {{end}}
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
     <script src="/static/theme.js"></script>
+    <script src="/static/ui-enhancements.js"></script>
     <script>
         function toggleTheme() {
             if (window.themeManager) {
