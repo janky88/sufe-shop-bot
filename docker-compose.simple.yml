@@ -13,8 +13,6 @@ services:
       - ./data:/app/data
     ports:
       - "9147:9147"
-    networks:
-      - 1panel-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9147/healthz"]
@@ -22,7 +20,3 @@ services:
       timeout: 3s
       retries: 3
       start_period: 40s
-
-networks:
-  1panel-network:
-    external: true

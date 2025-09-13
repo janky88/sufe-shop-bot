@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库服务
+  postgres:
+    image: postgres:15-alpine
+    container_name: shopbot-postgres
+    environment:
+      - POSTGRES_DB=shopbot
+      - POSTGRES_USER=shopbot
+      - POSTGRES_PASSWORD=shopbot_secure_password_2024
+      - TZ=Asia/Shanghai
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - shopbot-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shopbot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 缓存服务
+  redis:
+    image: redis:7-alpine
+    container_name: shopbot-redis
+    command: redis-server --appendonly yes --requirepass redis_secure_password_2024
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - shopbot-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis_secure_password_2024", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 应用服务
+  app:
+    build: .
+    container_name: shopbot-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env.production
+    environment:
+      - TZ=Asia/Shanghai
+      - DB_TYPE=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=shopbot
+      - DB_USER=shopbot
+      - DB_PASSWORD=shopbot_secure_password_2024
+      - DB_SSL_MODE=disable
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=redis_secure_password_2024
+    volumes:
+      - ./templates:/app/templates:ro
+      - ./static:/app/static:ro
+      - ./logs:/app/logs
+      - ./data:/app/data
+    ports:
+      - "9147:9147"
+    networks:
+      - shopbot-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9147/healthz"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+
+networks:
+  shopbot-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local

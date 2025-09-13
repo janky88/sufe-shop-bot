@@ -67,6 +67,12 @@ type Application struct {
 
 // New creates a new application instance
 func New(cfg *config.Config, db *gorm.DB) (*Application, error) {
+	// Initialize admins from config
+	if err := store.InitializeAdminsFromConfig(db, cfg); err != nil {
+		logger.Error("Failed to initialize admins from config", "error", err)
+		// Continue anyway, this is not critical
+	}
+
 	// Initialize configuration manager
 	configManager := config.NewManager(cfg, db)
 

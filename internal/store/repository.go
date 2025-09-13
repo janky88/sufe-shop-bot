@@ -2,10 +2,11 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
-	
+
 	"gorm.io/gorm"
 	"shop-bot/internal/config"
 )
@@ -350,8 +351,62 @@ func GetCurrencySettings(db *gorm.DB, config *config.Config) (currency string, s
 	if symbol == "" {
 		symbol = "¥"
 	}
-	
+
 	return currency, symbol
+}
+
+// InitializeAdminsFromConfig initializes admin users based on ADMIN_TELEGRAM_IDS config
+func InitializeAdminsFromConfig(db *gorm.DB, cfg *config.Config) error {
+	adminIDs := cfg.GetAdminTelegramIDs()
+	if len(adminIDs) == 0 {
+		return nil
+	}
+
+	for i, telegramID := range adminIDs {
+		username := fmt.Sprintf("admin%d", i+1)
+		if i == 0 {
+			username = "admin" // First admin gets the default username
+		}
+
+		var adminUser AdminUser
+		err := db.Where("telegram_id = ?", telegramID).First(&adminUser).Error
+
+		if err == gorm.ErrRecordNotFound {
+			// Create new admin user
+			adminUser = AdminUser{
+				Username:            username,
+				Password:            "", // Password will be set via web interface
+				TelegramID:          sql.NullInt64{Int64: telegramID, Valid: true},
+				ReceiveNotifications: true,
+				IsActive:            true,
+			}
+
+			// Check if username already exists
+			var existing AdminUser
+			if db.Where("username = ?", username).First(&existing).Error == nil {
+				// Username exists, add suffix
+				adminUser.Username = fmt.Sprintf("%s_%d", username, telegramID)
+			}
+
+			if err := db.Create(&adminUser).Error; err != nil {
+				return fmt.Errorf("failed to create admin user for telegram ID %d: %w", telegramID, err)
+			}
+
+			fmt.Printf("Admin user %s created with Telegram ID: %d\n", adminUser.Username, telegramID)
+		} else if err == nil {
+			// Update existing admin to ensure notifications are enabled
+			if !adminUser.ReceiveNotifications {
+				adminUser.ReceiveNotifications = true
+				if err := db.Save(&adminUser).Error; err != nil {
+					return fmt.Errorf("failed to update admin user: %w", err)
+				}
+			}
+		} else {
+			return fmt.Errorf("failed to check admin user: %w", err)
+		}
+	}
+
+	return nil
 }
 
 // GetActiveFAQs returns all active FAQs for a given language
