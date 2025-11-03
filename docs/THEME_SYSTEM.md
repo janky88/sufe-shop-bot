@@ -128,15 +128,13 @@ window.addEventListener('themechange', (e) => {
 
 ## Updating Remaining Templates
 
-To update the remaining templates to use the theme system:
+To update templates to use the theme system:
 
 1. Add the HTML structure with theme support
 2. Replace hardcoded colors with CSS variables
 3. Add the theme toggle button in the header
 4. Include theme.css and theme.js files
 5. Test both light and dark modes
-
-The update_templates.sh script can help automate this process.
 
 ## Best Practices
 
